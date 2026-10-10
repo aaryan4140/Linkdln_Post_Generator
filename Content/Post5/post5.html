@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Post 5 — The FDE Mindset</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Inter',sans-serif;background:#070b12;color:#e2e8f0;padding:40px;display:flex;flex-direction:column;align-items:center;gap:48px}
+  .toolbar{position:fixed;top:0;left:0;right:0;background:rgba(7,11,18,0.95);backdrop-filter:blur(12px);border-bottom:1px solid #1e293b;padding:14px 32px;display:flex;align-items:center;justify-content:space-between;z-index:100}
+  .toolbar h2{font-size:19px;font-weight:700;color:#f1f5f9}
+  .toolbar .actions{display:flex;gap:16px;align-items:center}
+  .btn-ghost{padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid rgba(56,189,248,0.2);background:rgba(56,189,248,0.1);color:#38bdf8;font-family:'Inter',sans-serif}
+  .status{font-size:12px;color:#64748b;min-width:200px;text-align:right}
+  .spacer{height:60px}
+  .slide-wrapper{display:flex;flex-direction:column;align-items:center;gap:12px}
+  .slide-label{display:flex;align-items:center;justify-content:space-between;width:1080px}
+  .slide-label span{font-size:13px;font-weight:600;color:#475569;text-transform:uppercase;letter-spacing:0.5px}
+  .btn-sm{padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid rgba(56,189,248,0.2);background:rgba(56,189,248,0.08);color:#38bdf8;font-family:'Inter',sans-serif}
+  .divider{width:1080px;height:1px;background:linear-gradient(90deg,transparent,#1e293b,transparent);margin:8px 0}
+  .section-title{font-size:13px;font-weight:700;color:#38bdf8;text-transform:uppercase;letter-spacing:1px;width:1080px;text-align:center}
+
+  /* SLIDE BASE */
+  .s{width:1080px;height:1080px;border-radius:24px;padding:28px 30px;display:flex;flex-direction:column;position:relative;overflow:hidden;background:linear-gradient(145deg,#0d1224,#111a2e,#0a1628)}
+  .s::before{content:'';position:absolute;top:-200px;right:-200px;width:600px;height:600px;background:radial-gradient(circle,rgba(56,189,248,0.06) 0%,transparent 70%);pointer-events:none}
+  .s::after{content:'';position:absolute;bottom:-150px;left:-150px;width:500px;height:500px;background:radial-gradient(circle,rgba(16,185,129,0.04) 0%,transparent 70%);pointer-events:none}
+  .grid-bg{position:absolute;inset:0;background-image:radial-gradient(rgba(56,189,248,0.03) 1px,transparent 1px);background-size:28px 28px;pointer-events:none}
+
+  /* COMMON */
+  .badge{display:inline-flex;align-items:center;gap:10px;padding:8px 18px;border-radius:100px;font-size:15px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;width:fit-content;margin-bottom:10px}
+  .badge.green{background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.25);color:#34d399}
+  .badge .dot{width:8px;height:8px;border-radius:50%;background:currentColor;animation:pulse 2s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+
+  .foot{margin-top:auto;display:flex;align-items:center;justify-content:space-between;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06)}
+  .auth{display:flex;align-items:center;gap:10px}
+  .av{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#38bdf8,#10b981);display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800;color:#0a0e1a}
+  .auth .nm{font-size:15px;font-weight:700;color:#f1f5f9}
+  .auth .rl{font-size:13px;color:#64748b}
+  .ftag{background:rgba(56,189,248,0.1);border:1px solid rgba(56,189,248,0.2);color:#38bdf8;padding:5px 14px;border-radius:6px;font-size:13px;font-weight:600}
+
+  /* ============ SLIDE 1: HERO ============ */
+  /*
+    DYNAMIC SIZING — SLIDE 1:
+    Available: 1080 - 56 (padding) = 1024px
+    Badge+Title+Sub: ~100px
+    Roadmap (nodes + track + labels): ~260px (expanded from 220)
+    Donut + Checklist (side by side): ~300px (expanded from 260)
+    Comparison box: ~100px
+    Insight bar: ~50px
+    Footer: ~50px
+    Gaps: ~80px
+    Total: ~940px → flex:1 on hero-mid absorbs remaining ~84px
+  */
+
+  .hero-title{font-size:40px;font-weight:900;line-height:1.08;letter-spacing:-1.5px;margin-bottom:4px;color:#f8fafc}
+  .hero-title .acc{color:#34d399;text-shadow:0 0 40px rgba(52,211,153,0.3)}
+  .hero-sub{font-size:16px;color:#94a3b8;margin-bottom:14px;line-height:1.35}
+
+  /* HORIZONTAL ROADMAP */
+  .roadmap-container{width:100%;padding:0 10px;margin-bottom:16px}
+  .rm-nodes{display:flex;justify-content:space-between;z-index:2;position:relative}
+  .rm-node{display:flex;flex-direction:column;align-items:center;width:180px}
+  .rm-icon-above{font-size:26px;line-height:1;margin-bottom:4px}
+  .rm-circle{width:68px;height:68px;border-radius:50%;border:4px solid;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:900;background:#0d1224;position:relative;z-index:2;color:#f1f5f9}
+  .rm-circle.c1{border-color:#3b82f6;box-shadow:0 0 18px rgba(59,130,246,0.25)}
+  .rm-circle.c2{border-color:#8b5cf6;box-shadow:0 0 18px rgba(139,92,246,0.25)}
+  .rm-circle.c3{border-color:#ef4444;box-shadow:0 0 18px rgba(239,68,68,0.25)}
+  .rm-circle.c4{border-color:#f59e0b;box-shadow:0 0 18px rgba(245,158,11,0.25)}
+  .rm-circle.c5{border-color:#22c55e;box-shadow:0 0 18px rgba(34,197,94,0.25)}
+  .rm-name{font-size:15px;font-weight:800;color:#f1f5f9;margin-top:8px;text-align:center;text-transform:uppercase;letter-spacing:0.3px;line-height:1.15}
+  .rm-desc{font-size:13px;color:#94a3b8;text-align:center;margin-top:3px;line-height:1.2}
+  .rm-track-wrap{position:relative;height:6px;margin:-40px 96px 0;z-index:1}
+  .rm-track{height:6px;border-radius:3px;background:linear-gradient(90deg,#3b82f6,#8b5cf6,#ef4444,#f59e0b,#22c55e)}
+  .rm-track-glow{position:absolute;inset:-4px -2px;border-radius:7px;background:linear-gradient(90deg,rgba(59,130,246,0.15),rgba(139,92,246,0.15),rgba(239,68,68,0.15),rgba(245,158,11,0.15),rgba(34,197,94,0.15));filter:blur(8px);z-index:-1}
+
+  /* DONUT + CHECKLIST SECTION */
+  .hero-mid{display:flex;gap:18px;flex:1;min-height:0;align-items:stretch;margin-bottom:14px}
+
+  /* DONUT CHART */
+  .donut-section{width:300px;display:flex;flex-direction:column;align-items:center;flex-shrink:0;padding-top:4px}
+  .donut-label{font-size:16px;font-weight:800;color:#f1f5f9;margin-bottom:10px;text-align:center}
+  .donut-wrap{position:relative;width:180px;height:180px;margin-bottom:10px}
+  .donut-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center}
+  .donut-center .pct{font-size:32px;font-weight:900;color:#f1f5f9}
+  .donut-center .lbl{font-size:13px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px}
+  .legend{display:flex;flex-direction:column;gap:5px;width:100%}
+  .legend-item{display:flex;align-items:center;gap:8px;font-size:14px;color:#94a3b8}
+  .legend-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+
+  /* CHECKLIST */
+  .checklist-section{flex:1;display:flex;flex-direction:column;min-width:0;padding-top:4px;max-width:380px}
+  .checklist-label{font-size:16px;font-weight:800;color:#f1f5f9;margin-bottom:10px}
+  .check-item{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04)}
+  .check-icon{width:22px;height:22px;border-radius:5px;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.3);display:flex;align-items:center;justify-content:center;font-size:13px;color:#34d399;flex-shrink:0}
+  .check-text{font-size:15px;color:#cbd5e1;font-weight:500}
+
+  /* COMPARISON BOX */
+  .compare-box{display:flex;width:100%;border-radius:14px;overflow:hidden;border:1px solid rgba(255,255,255,0.06);margin-bottom:12px}
+  .compare-half{flex:1;padding:14px 20px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+  .compare-half.red-side{background:rgba(239,68,68,0.04);border-right:1px solid rgba(255,255,255,0.06)}
+  .compare-half.green-side{background:rgba(34,197,94,0.06)}
+  .cmp-icon{font-size:24px;line-height:1}
+  .cmp-label{font-size:18px;font-weight:800}
+  .cmp-label.red{color:#f87171}
+  .cmp-label.green{color:#34d399}
+  .cmp-action{font-size:14px}
+  .cmp-action.dim{color:#94a3b8}
+  .cmp-action.bright{color:#f1f5f9}
+  .cmp-divider{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:36px;height:36px;border-radius:50%;background:#1e293b;border:2px solid #334155;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#64748b;z-index:2}
+  .compare-box-inner{position:relative;display:flex;width:100%}
+
+  /* INSIGHT BAR */
+  .insight-bar{display:flex;align-items:center;justify-content:space-between;width:100%;gap:12px;margin-bottom:12px}
+  .insight-text{font-size:15px;color:#94a3b8;font-style:italic;flex:1;line-height:1.3}
+  .insight-badge{padding:7px 14px;border-radius:8px;background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.2);color:#34d399;font-size:14px;font-weight:700;white-space:nowrap}
+
+  /* ============ SLIDE 2 ============ */
+  /*
+    DYNAMIC SIZING — SLIDE 2:
+    Available: 1024px
+    Title: ~60px
+    Roadmap (larger, 80px nodes): ~260px
+    Donut + checklist: ~260px
+    Comparison + impact: ~140px
+    Balance scale: ~120px (flexbox only)
+    Tags: ~70px
+    Gaps: ~80px
+    Total: ~990px → ~34px slack
+  */
+
+  .s2-title{font-size:32px;font-weight:900;letter-spacing:-0.8px;color:#f8fafc;text-align:center;line-height:1.2;margin-bottom:14px}
+  .s2-title .acc{color:#34d399;text-shadow:0 0 30px rgba(52,211,153,0.3)}
+
+  /* LARGE ROADMAP (80px nodes) */
+  .roadmap-lg{width:100%;padding:0 6px;margin-bottom:14px}
+  .rm-nodes-lg{display:flex;justify-content:space-between;z-index:2;position:relative}
+  .rm-node-lg{display:flex;flex-direction:column;align-items:center;width:188px}
+  .rm-icon-lg{font-size:28px;line-height:1;margin-bottom:4px}
+  .rm-circle-lg{width:80px;height:80px;border-radius:50%;border:4px solid;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:900;background:#0d1224;position:relative;z-index:2;color:#f1f5f9}
+  .rm-circle-lg.c1{border-color:#3b82f6;box-shadow:0 0 22px rgba(59,130,246,0.3)}
+  .rm-circle-lg.c2{border-color:#8b5cf6;box-shadow:0 0 22px rgba(139,92,246,0.3)}
+  .rm-circle-lg.c3{border-color:#ef4444;box-shadow:0 0 22px rgba(239,68,68,0.3)}
+  .rm-circle-lg.c4{border-color:#f59e0b;box-shadow:0 0 22px rgba(245,158,11,0.3)}
+  .rm-circle-lg.c5{border-color:#22c55e;box-shadow:0 0 22px rgba(34,197,94,0.3)}
+  .rm-name-lg{font-size:16px;font-weight:800;color:#f1f5f9;margin-top:8px;text-align:center;text-transform:uppercase;letter-spacing:0.3px;line-height:1.15}
+  .rm-desc-lg{font-size:13px;color:#94a3b8;text-align:center;margin-top:2px;line-height:1.2}
+  .rm-track-lg-wrap{position:relative;height:8px;margin:-46px 100px 0;z-index:1}
+  .rm-track-lg{height:8px;border-radius:4px;background:linear-gradient(90deg,#3b82f6,#8b5cf6,#ef4444,#f59e0b,#22c55e)}
+  .rm-track-lg-glow{position:absolute;inset:-5px -2px;border-radius:9px;background:linear-gradient(90deg,rgba(59,130,246,0.2),rgba(139,92,246,0.2),rgba(239,68,68,0.2),rgba(245,158,11,0.2),rgba(34,197,94,0.2));filter:blur(10px);z-index:-1}
+
+  /* S2 DONUT + CHECKLIST */
+  .s2-mid{display:flex;gap:16px;margin-bottom:12px}
+  .s2-donut-col{width:45%;display:flex;flex-direction:column;align-items:center}
+  .s2-donut-label{font-size:16px;font-weight:800;color:#f1f5f9;margin-bottom:6px;text-align:center}
+  .s2-check-col{width:55%;display:flex;flex-direction:column}
+  .s2-check-label{font-size:16px;font-weight:800;color:#f1f5f9;margin-bottom:6px}
+  .s2-check-item{display:flex;align-items:center;gap:10px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04)}
+  .s2-check-icon{width:20px;height:20px;border-radius:4px;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.3);display:flex;align-items:center;justify-content:center;font-size:12px;color:#34d399;flex-shrink:0}
+  .s2-check-text{font-size:14px;color:#cbd5e1;font-weight:500}
+
+  /* S2 COMPARISON + IMPACT */
+  .s2-cmp-impact{display:flex;gap:12px;margin-bottom:12px}
+  .s2-compare-box{flex:1;display:flex;border-radius:12px;overflow:hidden;position:relative;border:1px solid rgba(255,255,255,0.06)}
+  .s2-compare-half{flex:1;padding:14px 16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
+  .s2-compare-half.red-side{background:rgba(239,68,68,0.04);border-right:1px solid rgba(255,255,255,0.06)}
+  .s2-compare-half.green-side{background:rgba(34,197,94,0.06)}
+  .s2-cmp-icon{font-size:22px;line-height:1}
+  .s2-cmp-label{font-size:16px;font-weight:800}
+  .s2-cmp-label.red{color:#f87171}
+  .s2-cmp-label.green{color:#34d399}
+  .s2-cmp-action{font-size:14px}
+  .s2-cmp-action.dim{color:#94a3b8}
+  .s2-cmp-action.bright{color:#f1f5f9}
+  .s2-cmp-divider{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:30px;height:30px;border-radius:50%;background:#1e293b;border:2px solid #334155;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#64748b;z-index:2}
+  .s2-impact-box{flex:1;padding:14px 18px;border-radius:12px;background:rgba(56,189,248,0.06);border:1px solid rgba(56,189,248,0.18);display:flex;flex-direction:column;justify-content:center}
+  .s2-impact-head{font-size:15px;font-weight:800;color:#38bdf8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px}
+  .s2-impact-text{font-size:14px;color:#cbd5e1;line-height:1.4}
+
+  /* S2 BALANCE SCALE — FLEXBOX ONLY, NO ABSOLUTE POSITIONING */
+  .balance-wrap{display:flex;flex-direction:column;align-items:center;margin-bottom:6px}
+  .balance-pans{display:flex;align-items:flex-end;justify-content:center;gap:60px;width:100%}
+  .bal-pan{display:flex;flex-direction:column;align-items:center;gap:4px}
+  .bal-pan-box{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 20px;border-radius:10px}
+  .bal-pan-box.red-bg{background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.18)}
+  .bal-pan-box.green-bg{background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.22)}
+  .bal-pan-label{font-size:15px;font-weight:800}
+  .bal-pan-label.red{color:#f87171}
+  .bal-pan-label.green{color:#34d399}
+  .bal-pan-sub{font-size:13px;font-weight:600}
+  .bal-pan-sub.dim{color:#94a3b8}
+  .bal-pan-sub.bright{color:#f1f5f9}
+  .bal-chain{width:2px;height:10px;background:#334155}
+  .bal-dish{width:100px;height:5px;border-radius:3px}
+  .bal-dish.red{background:linear-gradient(90deg,rgba(239,68,68,0.2),rgba(239,68,68,0.35))}
+  .bal-dish.green{background:linear-gradient(90deg,rgba(34,197,94,0.35),rgba(34,197,94,0.2))}
+  .bal-pan.left-pan{margin-bottom:22px}
+  .bal-pan.right-pan{margin-bottom:0}
+  .beam-row{display:flex;align-items:center;justify-content:center;width:480px;margin-top:-3px}
+  .beam-line{width:100%;height:4px;border-radius:3px;background:linear-gradient(90deg,#f87171,#475569,#34d399);transform:rotate(-6deg)}
+  .fulcrum-row{display:flex;flex-direction:column;align-items:center;margin-top:-2px}
+  .fulcrum-tri{width:0;height:0;border-left:18px solid transparent;border-right:18px solid transparent;border-bottom:22px solid #1e293b}
+  .fulcrum-base{width:60px;height:5px;background:#1e293b;border-radius:3px}
+
+  .balance-quote{text-align:center;font-size:15px;color:#94a3b8;font-style:italic;margin-bottom:10px;margin-top:4px}
+
+  /* S2 TAGS */
+  .s2-tags{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+  .s2-tags span{background:rgba(56,189,248,0.1);border:1px solid rgba(56,189,248,0.2);color:#38bdf8;padding:6px 14px;border-radius:8px;font-size:14px;font-weight:700}
+</style>
+</head>
+<body>
+<div class="spacer"></div>
+<div class="toolbar"><h2>Post 5 — The FDE Mindset</h2><div class="actions"><button class="btn-ghost" onclick="downloadAll()">Download All PNGs</button><span class="status" id="status"></span></div></div>
+
+<!-- ===== SLIDE 1: HERO ===== -->
+<div class="slide-wrapper">
+  <div class="slide-label"><span>Hero Image</span><button class="btn-sm" onclick="downloadOne(this,'post5_hero')">Download PNG</button></div>
+  <div class="s" data-name="post5_hero">
+    <div class="grid-bg"></div>
+
+    <!-- SECTION A: BADGE + TITLE + SUBTITLE (~100px) -->
+    <div class="badge green"><span class="dot"></span> The FDE Mindset</div>
+    <div class="hero-title">The 5-Step Framework That <span class="acc">Separates Builders from Dreamers</span></div>
+    <div class="hero-sub">A client says "we want to talk to our data." Most engineers pick a model. Here's what I do instead.</div>
+
+    <!-- SECTION B: HORIZONTAL ROADMAP (~260px) -->
+    <div class="roadmap-container">
+      <div class="rm-nodes">
+        <div class="rm-node">
+          <div class="rm-icon-above">&#x1F3AF;</div>
+          <div class="rm-circle c1">1</div>
+          <div class="rm-name">Business<br>Problem</div>
+          <div class="rm-desc">Map KPIs &amp; stakeholders</div>
+        </div>
+        <div class="rm-node">
+          <div class="rm-icon-above">&#x1F5FA;&#xFE0F;</div>
+          <div class="rm-circle c2">2</div>
+          <div class="rm-name">Map<br>Constraints</div>
+          <div class="rm-desc">Firewalls, compliance, legacy</div>
+        </div>
+        <div class="rm-node">
+          <div class="rm-icon-above">&#x1F512;</div>
+          <div class="rm-circle c3">3</div>
+          <div class="rm-name">Security<br>First</div>
+          <div class="rm-desc">RBAC, DENY, isolated views</div>
+        </div>
+        <div class="rm-node">
+          <div class="rm-icon-above">&#x1F9E0;</div>
+          <div class="rm-circle c4">4</div>
+          <div class="rm-name">Orchestration</div>
+          <div class="rm-desc">LangGraph + Pinecone + SQL</div>
+        </div>
+        <div class="rm-node">
+          <div class="rm-icon-above">&#x1F680;</div>
+          <div class="rm-circle c5">5</div>
+          <div class="rm-name">Deploy</div>
+          <div class="rm-desc">Docker, CI/CD, AWS EC2</div>
+        </div>
+      </div>
+      <div class="rm-track-wrap">
+        <div class="rm-track-glow"></div>
+        <div class="rm-track"></div>
+      </div>
+    </div>
+
+    <!-- SECTION C: DONUT + CHECKLIST side by side (~300px, flex:1) -->
+    <div class="hero-mid">
+      <!-- DONUT CHART (~300px wide) -->
+      <div class="donut-section">
+        <div class="donut-label">Time Investment Breakdown</div>
+        <div class="donut-wrap">
+          <svg viewBox="0 0 180 180" width="180" height="180">
+            <!-- circumference = 2*pi*68 = 427.26 -->
+            <!-- 40% Discovery (blue) = 170.90 -->
+            <circle cx="90" cy="90" r="68" fill="none" stroke="#3b82f6" stroke-width="24"
+              stroke-dasharray="170.90 256.36" stroke-dashoffset="0"
+              transform="rotate(-90 90 90)" opacity="0.9"/>
+            <!-- 25% Security (red) = 106.81 -->
+            <circle cx="90" cy="90" r="68" fill="none" stroke="#ef4444" stroke-width="24"
+              stroke-dasharray="106.81 320.44" stroke-dashoffset="-170.90"
+              transform="rotate(-90 90 90)" opacity="0.9"/>
+            <!-- 20% Orchestration (purple) = 85.45 -->
+            <circle cx="90" cy="90" r="68" fill="none" stroke="#a855f7" stroke-width="24"
+              stroke-dasharray="85.45 341.81" stroke-dashoffset="-277.71"
+              transform="rotate(-90 90 90)" opacity="0.9"/>
+            <!-- 10% Deployment (green) = 42.73 -->
+            <circle cx="90" cy="90" r="68" fill="none" stroke="#22c55e" stroke-width="24"
+              stroke-dasharray="42.73 384.53" stroke-dashoffset="-363.16"
+              transform="rotate(-90 90 90)" opacity="0.9"/>
+            <!-- 5% Prompting (gray) = 21.36 -->
+            <circle cx="90" cy="90" r="68" fill="none" stroke="#475569" stroke-width="24"
+              stroke-dasharray="21.36 405.90" stroke-dashoffset="-405.89"
+              transform="rotate(-90 90 90)" opacity="0.9"/>
+          </svg>
+          <div class="donut-center">
+            <div class="pct">40%</div>
+            <div class="lbl">Discovery</div>
+          </div>
+        </div>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>40% Discovery &amp; Design</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div>25% Security Setup</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#a855f7"></div>20% Orchestration</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div>10% Deployment</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#475569"></div>5% Prompting</div>
+        </div>
+      </div>
+
+      <!-- DELIVERABLES CHECKLIST -->
+      <div class="checklist-section">
+        <div class="checklist-label">Deliverables Checklist</div>
+        <div class="check-item"><div class="check-icon">&#x2713;</div><div class="check-text">HLD / LLD Design Docs</div></div>
+        <div class="check-item"><div class="check-icon">&#x2713;</div><div class="check-text">RBAC Configuration</div></div>
+        <div class="check-item"><div class="check-icon">&#x2713;</div><div class="check-text">Database Security Audit</div></div>
+        <div class="check-item"><div class="check-icon">&#x2713;</div><div class="check-text">LangGraph Flow Design</div></div>
+        <div class="check-item"><div class="check-icon">&#x2713;</div><div class="check-text">Docker Image Built</div></div>
+        <div class="check-item"><div class="check-icon">&#x2713;</div><div class="check-text">CI/CD Pipeline Active</div></div>
+        <div class="check-item"><div class="check-icon">&#x2713;</div><div class="check-text">Streamlit UI Deployed</div></div>
+      </div>
+    </div>
+
+    <!-- SECTION D: COMPARISON BOX (~100px) -->
+    <div class="compare-box">
+      <div class="compare-box-inner">
+        <div class="compare-half red-side">
+          <div class="cmp-icon">&#x1F4D3;</div>
+          <div class="cmp-label red">Model-First</div>
+          <div class="cmp-action dim">&rarr; Builds Demos</div>
+        </div>
+        <div class="cmp-divider">VS</div>
+        <div class="compare-half green-side">
+          <div class="cmp-icon">&#x1F680;</div>
+          <div class="cmp-label green">Problem-First</div>
+          <div class="cmp-action bright">&rarr; Ships Products</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION E: INSIGHT BAR (~50px) -->
+    <div class="insight-bar">
+      <div class="insight-text">&ldquo;The difference isn&rsquo;t technical skill &mdash; it&rsquo;s the order of operations.&rdquo;</div>
+      <div class="insight-badge">Brief to production: 6&ndash;8 weeks</div>
+    </div>
+
+    <!-- SECTION F: FOOTER (~50px) -->
+    <div class="foot">
+      <div class="auth"><div class="av">A</div><div><div class="nm">Aaryan Tiwari</div><div class="rl">Lead Gen AI Engineer &middot; 5 Years</div></div></div>
+      <div class="ftag">The FDE Framework</div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+<div class="section-title">Carousel Slides</div>
+
+<!-- ===== SLIDE 2: MERGED ===== -->
+<div class="slide-wrapper">
+  <div class="slide-label"><span>Slide 2 &mdash; Merged</span><button class="btn-sm" onclick="downloadOne(this,'post5_slide2')">Download PNG</button></div>
+  <div class="s" data-name="post5_slide2">
+    <div class="grid-bg"></div>
+
+    <!-- SECTION A: TITLE (~60px) -->
+    <div class="s2-title">The 5-Step <span class="acc">FDE Roadmap</span> &mdash; From Brief to Production</div>
+
+    <!-- SECTION B: LARGE ROADMAP (80px nodes, ~260px) -->
+    <div class="roadmap-lg">
+      <div class="rm-nodes-lg">
+        <div class="rm-node-lg">
+          <div class="rm-icon-lg">&#x1F3AF;</div>
+          <div class="rm-circle-lg c1">1</div>
+          <div class="rm-name-lg">Business<br>Problem</div>
+          <div class="rm-desc-lg">Map KPIs</div>
+        </div>
+        <div class="rm-node-lg">
+          <div class="rm-icon-lg">&#x1F5FA;&#xFE0F;</div>
+          <div class="rm-circle-lg c2">2</div>
+          <div class="rm-name-lg">Constraints</div>
+          <div class="rm-desc-lg">Firewalls, compliance</div>
+        </div>
+        <div class="rm-node-lg">
+          <div class="rm-icon-lg">&#x1F512;</div>
+          <div class="rm-circle-lg c3">3</div>
+          <div class="rm-name-lg">Security</div>
+          <div class="rm-desc-lg">RBAC, DENY rules</div>
+        </div>
+        <div class="rm-node-lg">
+          <div class="rm-icon-lg">&#x1F9E0;</div>
+          <div class="rm-circle-lg c4">4</div>
+          <div class="rm-name-lg">Orchestration</div>
+          <div class="rm-desc-lg">LangGraph + Pinecone</div>
+        </div>
+        <div class="rm-node-lg">
+          <div class="rm-icon-lg">&#x1F680;</div>
+          <div class="rm-circle-lg c5">5</div>
+          <div class="rm-name-lg">Deploy</div>
+          <div class="rm-desc-lg">Docker, CI/CD, AWS</div>
+        </div>
+      </div>
+      <div class="rm-track-lg-wrap">
+        <div class="rm-track-lg-glow"></div>
+        <div class="rm-track-lg"></div>
+      </div>
+    </div>
+
+    <!-- SECTION C: DONUT + CHECKLIST side by side (~260px) -->
+    <div class="s2-mid">
+      <!-- LEFT: DONUT (~45%) -->
+      <div class="s2-donut-col">
+        <div class="s2-donut-label">Where FDEs Spend Time</div>
+        <div style="position:relative;width:180px;height:180px;margin-bottom:8px">
+          <svg viewBox="0 0 180 180" width="180" height="180">
+            <!-- circumference = 2*pi*68 = 427.26 -->
+            <!-- 40% = 170.90, 25% = 106.81, 20% = 85.45, 10% = 42.73, 5% = 21.36 -->
+            <circle cx="90" cy="90" r="68" fill="none" stroke="#3b82f6" stroke-width="26"
+              stroke-dasharray="170.90 256.36" stroke-dashoffset="0"
+              transform="rotate(-90 90 90)" opacity="0.9"/>
+            <circle cx="90" cy="90" r="68" fill="none" stroke="#ef4444" stroke-width="26"
+              stroke-dasharray="106.81 320.44" stroke-dashoffset="-170.90"
+              transform="rotate(-90 90 90)" opacity="0.9"/>
+            <circle cx="90" cy="90" r="68" fill="none" stroke="#a855f7" stroke-width="26"
+              stroke-dasharray="85.45 341.81" stroke-dashoffset="-277.71"
+              transform="rotate(-90 90 90)" opacity="0.9"/>
+            <circle cx="90" cy="90" r="68" fill="none" stroke="#22c55e" stroke-width="26"
+              stroke-dasharray="42.73 384.53" stroke-dashoffset="-363.16"
+              transform="rotate(-90 90 90)" opacity="0.9"/>
+            <circle cx="90" cy="90" r="68" fill="none" stroke="#475569" stroke-width="26"
+              stroke-dasharray="21.36 405.90" stroke-dashoffset="-405.89"
+              transform="rotate(-90 90 90)" opacity="0.9"/>
+          </svg>
+          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center">
+            <div style="font-size:28px;font-weight:900;color:#f1f5f9">40%</div>
+            <div style="font-size:13px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px">Discovery</div>
+          </div>
+        </div>
+        <div class="legend" style="width:100%;padding-left:10px">
+          <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>40% Discovery</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div>25% Security</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#a855f7"></div>20% Orchestration</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div>10% Deploy</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#475569"></div>5% Prompting</div>
+        </div>
+      </div>
+
+      <!-- RIGHT: CHECKLIST (~55%) -->
+      <div class="s2-check-col">
+        <div class="s2-check-label">Deliverables Checklist</div>
+        <div class="s2-check-item"><div class="s2-check-icon">&#x2713;</div><div class="s2-check-text">HLD / LLD Design Docs</div></div>
+        <div class="s2-check-item"><div class="s2-check-icon">&#x2713;</div><div class="s2-check-text">RBAC Configuration</div></div>
+        <div class="s2-check-item"><div class="s2-check-icon">&#x2713;</div><div class="s2-check-text">Database Security Audit</div></div>
+        <div class="s2-check-item"><div class="s2-check-icon">&#x2713;</div><div class="s2-check-text">LangGraph Flow Design</div></div>
+        <div class="s2-check-item"><div class="s2-check-icon">&#x2713;</div><div class="s2-check-text">Docker Image Built</div></div>
+        <div class="s2-check-item"><div class="s2-check-icon">&#x2713;</div><div class="s2-check-text">CI/CD Pipeline Active</div></div>
+        <div class="s2-check-item"><div class="s2-check-icon">&#x2713;</div><div class="s2-check-text">Streamlit UI Deployed</div></div>
+      </div>
+    </div>
+
+    <!-- SECTION D: COMPARISON + CLIENT IMPACT (~140px) -->
+    <div class="s2-cmp-impact">
+      <!-- LEFT: COMPARISON -->
+      <div class="s2-compare-box">
+        <div class="s2-compare-half red-side">
+          <div class="s2-cmp-icon">&#x1F4D3;</div>
+          <div class="s2-cmp-label red">Model-First</div>
+          <div class="s2-cmp-action dim">&rarr; Builds Demos</div>
+        </div>
+        <div class="s2-cmp-divider">VS</div>
+        <div class="s2-compare-half green-side">
+          <div class="s2-cmp-icon">&#x1F680;</div>
+          <div class="s2-cmp-label green">Problem-First</div>
+          <div class="s2-cmp-action bright">&rarr; Ships Products</div>
+        </div>
+      </div>
+
+      <!-- RIGHT: CLIENT IMPACT -->
+      <div class="s2-impact-box">
+        <div class="s2-impact-head">&#x1F4A1; Client Impact</div>
+        <div class="s2-impact-text">Cold-chain logistics &rarr; &ldquo;Talk to fleet data&rdquo; &rarr; <strong style="color:#34d399">500+ daily queries</strong> in 6 weeks</div>
+      </div>
+    </div>
+
+    <!-- SECTION E: BALANCE SCALE (~120px, FLEXBOX ONLY) -->
+    <div class="balance-wrap">
+      <div class="balance-pans">
+        <div class="bal-pan left-pan">
+          <div class="bal-pan-box red-bg">
+            <div class="bal-pan-label red">Model-First</div>
+            <div class="bal-pan-sub dim">&rarr; Demos</div>
+          </div>
+          <div class="bal-chain"></div>
+          <div class="bal-dish red"></div>
+        </div>
+        <div class="bal-pan right-pan">
+          <div class="bal-pan-box green-bg">
+            <div class="bal-pan-label green">Problem-First</div>
+            <div class="bal-pan-sub bright">&rarr; Products</div>
+          </div>
+          <div class="bal-chain"></div>
+          <div class="bal-dish green"></div>
+        </div>
+      </div>
+      <div class="beam-row"><div class="beam-line"></div></div>
+      <div class="fulcrum-row">
+        <div class="fulcrum-tri"></div>
+        <div class="fulcrum-base"></div>
+      </div>
+    </div>
+
+    <div class="balance-quote">&ldquo;The difference isn&rsquo;t skill &mdash; it&rsquo;s sequence.&rdquo;</div>
+
+    <!-- SECTION F: TAGS (~70px) -->
+    <div class="s2-tags">
+      <span>#AI</span>
+      <span>#ForwardDeployedEngineer</span>
+      <span>#GenAI</span>
+      <span>#EnterpriseAI</span>
+      <span>#AIEngineer</span>
+      <span>#OpenToWork</span>
+      <span>#FDEMindset</span>
+      <span>#ProductionAI</span>
+      <span>#Hiring</span>
+      <span>#AIArchitect</span>
+    </div>
+  </div>
+</div>
+
+<script>
+async function captureElement(el,filename){const canvas=await html2canvas(el,{width:1080,height:1080,scale:2,backgroundColor:null,useCORS:true,logging:false,onclone:function(doc){doc.querySelectorAll('.slide-label,.toolbar,.btn-sm').forEach(e=>e.style.display='none')}});const link=document.createElement('a');link.download=filename+'.png';link.href=canvas.toDataURL('image/png');link.click()}
+async function downloadOne(btn,name){const el=btn.closest('.slide-wrapper').querySelector('[data-name]');btn.textContent='Exporting...';await captureElement(el,name);btn.textContent='Done!';setTimeout(()=>btn.textContent='Download PNG',2000)}
+async function downloadAll(){const s=document.getElementById('status');const els=document.querySelectorAll('[data-name]');for(let i=0;i<els.length;i++){s.textContent=`Exporting ${i+1} of ${els.length}...`;await captureElement(els[i],els[i].dataset.name);await new Promise(r=>setTimeout(r,500))}s.textContent=`Done! ${els.length} PNGs downloaded.`;setTimeout(()=>s.textContent='',4000)}
+</script>
+</body>
+</html>

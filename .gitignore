@@ -1,0 +1,21 @@
+# Claude Code
+.claude/
+
+# Project playbook (internal reference)
+PLAYBOOK.md
+
+# LinkedIn post content/ideas
+Content/linkedin_posts.txt
+
+# Source documents
+Docs/The Role of an AI Forward Deployed Engineer (1).html
+
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+
+# Temp frames (created during GIF generation)
+_temp_frames/

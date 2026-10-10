@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Post 1 — Demos vs Products</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Inter',sans-serif;background:#070b12;color:#e2e8f0;padding:40px;display:flex;flex-direction:column;align-items:center;gap:48px}
+  .toolbar{position:fixed;top:0;left:0;right:0;background:rgba(7,11,18,0.95);backdrop-filter:blur(12px);border-bottom:1px solid #1e293b;padding:14px 32px;display:flex;align-items:center;justify-content:space-between;z-index:100}
+  .toolbar h2{font-size:19px;font-weight:700;color:#f1f5f9}
+  .toolbar .actions{display:flex;gap:16px;align-items:center}
+  .btn-ghost{padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid rgba(56,189,248,0.2);background:rgba(56,189,248,0.1);color:#38bdf8;font-family:'Inter',sans-serif}
+  .status{font-size:12px;color:#64748b;min-width:200px;text-align:right}
+  .spacer{height:60px}
+  .slide-wrapper{display:flex;flex-direction:column;align-items:center;gap:12px}
+  .slide-label{display:flex;align-items:center;justify-content:space-between;width:1080px}
+  .slide-label span{font-size:13px;font-weight:600;color:#475569;text-transform:uppercase;letter-spacing:0.5px}
+  .btn-sm{padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid rgba(56,189,248,0.2);background:rgba(56,189,248,0.08);color:#38bdf8;font-family:'Inter',sans-serif}
+  .divider{width:1080px;height:1px;background:linear-gradient(90deg,transparent,#1e293b,transparent);margin:8px 0}
+  .section-title{font-size:13px;font-weight:700;color:#38bdf8;text-transform:uppercase;letter-spacing:1px;width:1080px;text-align:center}
+
+  /* SLIDE BASE */
+  .s{width:1080px;height:1080px;border-radius:24px;padding:28px 30px;display:flex;flex-direction:column;position:relative;overflow:hidden;background:linear-gradient(145deg,#0d1224,#111a2e,#0a1628)}
+  .s::before{content:'';position:absolute;top:-200px;right:-200px;width:600px;height:600px;background:radial-gradient(circle,rgba(56,189,248,0.06) 0%,transparent 70%);pointer-events:none}
+  .s::after{content:'';position:absolute;bottom:-150px;left:-150px;width:500px;height:500px;background:radial-gradient(circle,rgba(16,185,129,0.04) 0%,transparent 70%);pointer-events:none}
+  .grid-bg{position:absolute;inset:0;background-image:radial-gradient(rgba(56,189,248,0.03) 1px,transparent 1px);background-size:28px 28px;pointer-events:none}
+
+  /* ============================================================
+     SLIDE 1 (HERO) — DYNAMIC SIZING
+     Available: 1080 - 56 (padding) = 1024px
+     Badge + Title + Sub:   ~100px
+     Radar + Score bars:    ~440px  (primary visual — flex:1)
+     Stats row:             ~90px
+     Tech compare:          ~55px
+     Quote callout:         ~50px
+     Footer:                ~50px
+     Gaps (~14px x 5):      ~70px
+     Subtotal:              ~855px
+     Remaining ~169px → absorbed by radar-row via flex:1
+     ============================================================ */
+
+  /* COMMON */
+  .badge{display:inline-flex;align-items:center;gap:10px;padding:8px 18px;border-radius:100px;font-size:15px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;width:fit-content;margin-bottom:10px}
+  .badge.blue{background:rgba(56,189,248,0.1);border:1px solid rgba(56,189,248,0.25);color:#38bdf8}
+  .badge .dot{width:8px;height:8px;border-radius:50%;background:currentColor;animation:pulse 2s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+
+  .foot{display:flex;align-items:center;justify-content:space-between;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06);margin-top:auto}
+  .auth{display:flex;align-items:center;gap:10px}
+  .av{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#38bdf8,#10b981);display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800;color:#0a0e1a}
+  .auth .nm{font-size:15px;font-weight:700;color:#f1f5f9}
+  .auth .rl{font-size:13px;color:#64748b}
+  .ftag{background:rgba(56,189,248,0.1);border:1px solid rgba(56,189,248,0.2);color:#38bdf8;padding:5px 14px;border-radius:6px;font-size:13px;font-weight:600}
+
+  /* HERO title block: ~100px total */
+  .hero-title{font-size:40px;font-weight:900;line-height:1.08;letter-spacing:-1.5px;margin-bottom:4px;color:#f8fafc}
+  .hero-title .acc{color:#38bdf8;text-shadow:0 0 40px rgba(56,189,248,0.3)}
+  .hero-sub{font-size:17px;color:#64748b;margin-bottom:14px;line-height:1.3}
+
+  /* Radar + Scorecards row: primary visual, gets flex:1 */
+  .radar-row{display:flex;gap:20px;align-items:stretch;margin-bottom:14px;flex:1;min-height:420px}
+  .radar{width:400px;position:relative;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+  .radar-bg{width:100%;height:100%;max-height:420px}
+  .radar-bg svg{width:100%;height:100%}
+  .axis-labels{position:absolute;inset:0;pointer-events:none}
+  .ax-label{position:absolute;font-size:13px;font-weight:700;color:#94a3b8;text-align:center;width:100px;transform:translate(-50%,-50%)}
+
+  /* Legend mini */
+  .radar-legend-mini{display:flex;gap:16px;position:absolute;bottom:6px;left:50%;transform:translateX(-50%)}
+  .legend-m{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700}
+  .legend-m .ld{width:10px;height:10px;border-radius:3px}
+  .legend-m .ld.red{background:#f87171}
+  .legend-m .ld.green{background:#34d399}
+
+  /* Score cards beside radar */
+  .score-cards{flex:1;display:flex;flex-direction:column;gap:10px;justify-content:center}
+  .sc-row{display:flex;align-items:center;gap:10px}
+  .sc-dim{font-size:13px;font-weight:700;color:#94a3b8;width:90px;text-align:right;flex-shrink:0}
+  .sc-bars{flex:1;display:flex;gap:6px;align-items:center;height:18px}
+  .sc-bar{height:100%;border-radius:4px}
+  .sc-bar.red{background:linear-gradient(90deg,#f87171,#ef4444)}
+  .sc-bar.green{background:linear-gradient(90deg,#34d399,#10b981)}
+  .sc-scores{font-size:14px;font-weight:700;color:#64748b;white-space:nowrap;flex-shrink:0;width:90px}
+  .sc-scores .rv{color:#f87171}
+  .sc-scores .gv{color:#34d399}
+
+  /* Stats row: ~90px */
+  .stats{display:flex;gap:12px;margin-bottom:14px}
+  .stat{flex:1;background:rgba(255,255,255,0.03);border:1px solid #1e293b;border-radius:12px;padding:14px 18px;text-align:center}
+  .stat .sv{font-size:36px;font-weight:900;letter-spacing:-1px}
+  .stat .sv.red{color:#f87171}
+  .stat .sv.blue{color:#38bdf8}
+  .stat .sv.green{color:#34d399}
+  .stat .sl{font-size:13px;color:#64748b;font-weight:600;margin-top:2px}
+
+  /* Tech stack comparison: ~55px */
+  .tech-compare{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+  .tech-row{display:flex;align-items:center;gap:10px}
+  .tech-row-label{font-size:14px;font-weight:800;width:70px;flex-shrink:0}
+  .tech-row-label.sandbox{color:#f87171}
+  .tech-row-label.fde{color:#34d399}
+  .tech-pills{display:flex;gap:8px;flex-wrap:wrap}
+  .tp{padding:4px 12px;border-radius:8px;font-size:14px;font-weight:700;white-space:nowrap}
+  .tp.red{background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.2);color:#f87171}
+  .tp.green{background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.2);color:#34d399}
+
+  /* Quote callout: ~50px */
+  .quote-box{border:1px solid rgba(56,189,248,0.15);border-radius:10px;padding:10px 16px;background:rgba(56,189,248,0.04);margin-bottom:14px}
+  .quote-box p{font-size:15px;font-style:italic;color:#64748b;line-height:1.4}
+
+  /* ============================================================
+     SLIDE 2 (MERGED) — DYNAMIC SIZING
+     Available: 1080 - 64 (padding) = 1016px
+     Title bar:             ~55px
+     Gauge track:           ~65px
+     5 Maturity cards:      ~240px  (primary visual — flex:1)
+     Distribution bar:      ~55px
+     Insight callout:       ~75px
+     What You'll Learn 2x2: ~210px
+     Tags + badge:          ~70px
+     Gaps (~14px x 6):      ~84px
+     Subtotal:              ~854px
+     Remaining ~162px → absorbed by maturity cards via flex:1
+     ============================================================ */
+
+  /* Title bar */
+  .s2-titlebar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+  .s2-titlebar h2{font-size:34px;font-weight:900;letter-spacing:-0.5px;color:#f8fafc}
+  .s2-titlebar h2 .acc{color:#38bdf8;text-shadow:0 0 30px rgba(56,189,248,0.3)}
+  .s2-titlebar .muted{font-size:15px;color:#64748b;font-weight:600}
+
+  /* Gauge track */
+  .s2-gauge{position:relative;margin-bottom:14px}
+  .s2-gauge-bar{height:10px;border-radius:5px;background:linear-gradient(90deg,#ef4444 0%,#f59e0b 25%,#38bdf8 50%,#10b981 75%,#22c55e 100%);position:relative}
+  .s2-gauge-nodes{display:flex;justify-content:space-between;position:absolute;top:-9px;left:0;right:0}
+  .s2-gauge-node{width:28px;height:28px;border-radius:50%;border:3px solid;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;background:#0d1224}
+  .gn1{border-color:#ef4444;color:#ef4444}
+  .gn2{border-color:#f59e0b;color:#f59e0b}
+  .gn3{border-color:#38bdf8;color:#38bdf8}
+  .gn4{border-color:#10b981;color:#10b981}
+  .gn5{border-color:#22c55e;color:#22c55e}
+  .s2-gauge-labels{display:flex;justify-content:space-between;margin-top:8px}
+  .s2-gauge-labels span{font-size:13px;font-weight:700;color:#64748b;text-align:center;flex:1}
+
+  /* Maturity cards — primary visual, flex:1 */
+  .s2-maturity{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px;flex:1;align-content:stretch}
+  .s2-mcard{border-radius:10px;padding:14px 10px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px}
+  .s2-mcard.m1{background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.15)}
+  .s2-mcard.m2{background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.15)}
+  .s2-mcard.m3{background:rgba(56,189,248,0.06);border:1px solid rgba(56,189,248,0.15)}
+  .s2-mcard.m4{background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.15)}
+  .s2-mcard.m5{background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.15)}
+  .s2-mcard .mc-icon{font-size:32px;line-height:1}
+  .s2-mcard .mc-name{font-size:16px;font-weight:800;color:#f1f5f9}
+  .s2-mcard .mc-desc{font-size:13px;color:#94a3b8;line-height:1.3}
+  .s2-mcard .mc-tag{font-size:13px;font-weight:700;padding:3px 10px;border-radius:5px;margin-top:auto}
+  .m1 .mc-tag{background:rgba(239,68,68,0.12);color:#f87171}
+  .m2 .mc-tag{background:rgba(245,158,11,0.12);color:#f59e0b}
+  .m3 .mc-tag{background:rgba(56,189,248,0.12);color:#38bdf8}
+  .m4 .mc-tag{background:rgba(16,185,129,0.12);color:#34d399}
+  .m5 .mc-tag{background:rgba(34,197,94,0.12);color:#22c55e}
+
+  /* Stacked distribution bar */
+  .s2-distbar{display:flex;height:32px;border-radius:8px;overflow:hidden;margin-bottom:14px}
+  .s2-distbar .seg{display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#0d1224}
+
+  /* Insight callout */
+  .s2-insight{border:1px solid rgba(56,189,248,0.2);border-radius:10px;padding:14px 18px;background:rgba(56,189,248,0.05);margin-bottom:14px;display:flex;gap:12px;align-items:center}
+  .s2-insight .ii{font-size:28px;flex-shrink:0}
+  .s2-insight .it{font-size:15px;color:#94a3b8;line-height:1.35}
+  .s2-insight .it strong{color:#38bdf8}
+
+  /* What You'll Learn 2x2 grid */
+  .s2-learn-title{font-size:20px;font-weight:800;color:#f1f5f9;margin-bottom:12px}
+  .s2-learn{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+  .s2-lcard{display:flex;align-items:center;gap:12px;background:rgba(255,255,255,0.03);border:1px solid #1e293b;border-radius:10px;padding:14px 16px}
+  .s2-lcard .lc-icon{font-size:26px;flex-shrink:0}
+  .s2-lcard .lc-label{font-size:15px;font-weight:700;color:#f1f5f9}
+  .s2-lcard .lc-desc{font-size:13px;color:#64748b;line-height:1.25}
+
+  /* Tags + CTA */
+  .s2-bottom-row{display:flex;align-items:center;justify-content:space-between}
+  .s2-tags{display:flex;gap:8px;flex-wrap:wrap}
+  .s2-tags span{background:rgba(56,189,248,0.1);border:1px solid rgba(56,189,248,0.2);color:#38bdf8;padding:5px 14px;border-radius:8px;font-size:14px;font-weight:700}
+  .s2-opp{display:inline-flex;align-items:center;gap:8px;padding:8px 20px;border-radius:100px;font-size:14px;font-weight:800;background:linear-gradient(135deg,rgba(56,189,248,0.15),rgba(16,185,129,0.15));border:1px solid rgba(56,189,248,0.3);color:#34d399;flex-shrink:0}
+  .s2-opp .opp-dot{width:9px;height:9px;border-radius:50%;background:#34d399;animation:pulse 2s infinite}
+</style>
+</head>
+<body>
+<div class="spacer"></div>
+<div class="toolbar"><h2>Post 1 — Demos vs Products</h2><div class="actions"><button class="btn-ghost" onclick="downloadAll()">Download All PNGs</button><span class="status" id="status"></span></div></div>
+
+<!-- ===== SLIDE 1: HERO ===== -->
+<div class="slide-wrapper">
+  <div class="slide-label"><span>Hero Image</span><button class="btn-sm" onclick="downloadOne(this,'post1_hero')">Download PNG</button></div>
+  <div class="s" data-name="post1_hero">
+    <div class="grid-bg"></div>
+
+    <!-- SECTION A: BADGE + TITLE + SUBTITLE (~100px) -->
+    <div class="badge blue"><span class="dot"></span> AI Engineering Insight</div>
+    <div class="hero-title">Most AI Engineers <span class="acc">Build Demos.</span><br>FDEs <span class="acc">Ship Products.</span></div>
+    <div class="hero-sub">A radar comparison across 6 enterprise-readiness dimensions.</div>
+
+    <!-- SECTION B: RADAR + SCORE CARDS (~440px, flex:1, primary visual) -->
+    <div class="radar-row">
+      <div class="radar">
+        <div class="radar-bg">
+          <svg viewBox="0 0 400 400">
+            <!-- Grid rings (5 levels) -->
+            <polygon points="200,40 338,110 338,290 200,360 62,290 62,110" fill="none" stroke="#1e293b" stroke-width="1"/>
+            <polygon points="200,72 310,126 310,274 200,328 90,274 90,126" fill="none" stroke="#1e293b" stroke-width="0.7"/>
+            <polygon points="200,104 282,142 282,258 200,296 118,258 118,142" fill="none" stroke="#1e293b" stroke-width="0.7"/>
+            <polygon points="200,136 254,158 254,242 200,264 146,242 146,158" fill="none" stroke="#1e293b" stroke-width="0.7"/>
+            <polygon points="200,168 226,178 226,222 200,232 174,222 174,178" fill="none" stroke="#1e293b" stroke-width="0.5"/>
+            <!-- Axis lines -->
+            <line x1="200" y1="40" x2="200" y2="360" stroke="#1e293b" stroke-width="0.7"/>
+            <line x1="62" y1="110" x2="338" y2="290" stroke="#1e293b" stroke-width="0.7"/>
+            <line x1="338" y1="110" x2="62" y2="290" stroke="#1e293b" stroke-width="0.7"/>
+            <!-- Sandbox polygon (small, red, dashed) -->
+            <polygon points="200,168 221,175 221,225 200,235 179,225 179,175" fill="rgba(248,113,113,0.1)" stroke="#f87171" stroke-width="2.5" stroke-dasharray="6,4"/>
+            <!-- FDE polygon (large, green, solid) -->
+            <polygon points="200,53 327,117 332,283 200,350 71,283 68,117" fill="rgba(52,211,153,0.07)" stroke="#34d399" stroke-width="2.5"/>
+          </svg>
+        </div>
+        <div class="axis-labels">
+          <div class="ax-label" style="top:2%;left:50%">Security</div>
+          <div class="ax-label" style="top:22%;left:93%">Scalability</div>
+          <div class="ax-label" style="top:74%;left:93%">Data Complexity</div>
+          <div class="ax-label" style="top:96%;left:50%">Client Exposure</div>
+          <div class="ax-label" style="top:74%;left:7%">Deployment</div>
+          <div class="ax-label" style="top:22%;left:7%">Orchestration</div>
+        </div>
+        <div class="radar-legend-mini">
+          <div class="legend-m"><div class="ld red"></div><span style="color:#f87171">Sandbox</span></div>
+          <div class="legend-m"><div class="ld green"></div><span style="color:#34d399">FDE</span></div>
+        </div>
+      </div>
+
+      <!-- SCORE CARDS -->
+      <div class="score-cards">
+        <div class="sc-row">
+          <div class="sc-dim">Security</div>
+          <div class="sc-bars">
+            <div class="sc-bar red" style="width:20%"></div>
+            <div class="sc-bar green" style="width:90%"></div>
+          </div>
+          <div class="sc-scores"><span class="rv">2</span>/10 | <span class="gv">9</span>/10</div>
+        </div>
+        <div class="sc-row">
+          <div class="sc-dim">Scalability</div>
+          <div class="sc-bars">
+            <div class="sc-bar red" style="width:10%"></div>
+            <div class="sc-bar green" style="width:80%"></div>
+          </div>
+          <div class="sc-scores"><span class="rv">1</span>/10 | <span class="gv">8</span>/10</div>
+        </div>
+        <div class="sc-row">
+          <div class="sc-dim">Data Complex.</div>
+          <div class="sc-bars">
+            <div class="sc-bar red" style="width:20%"></div>
+            <div class="sc-bar green" style="width:90%"></div>
+          </div>
+          <div class="sc-scores"><span class="rv">2</span>/10 | <span class="gv">9</span>/10</div>
+        </div>
+        <div class="sc-row">
+          <div class="sc-dim">Client Exp.</div>
+          <div class="sc-bars">
+            <div class="sc-bar red" style="width:10%"></div>
+            <div class="sc-bar green" style="width:80%"></div>
+          </div>
+          <div class="sc-scores"><span class="rv">1</span>/10 | <span class="gv">8</span>/10</div>
+        </div>
+        <div class="sc-row">
+          <div class="sc-dim">Deployment</div>
+          <div class="sc-bars">
+            <div class="sc-bar red" style="width:10%"></div>
+            <div class="sc-bar green" style="width:90%"></div>
+          </div>
+          <div class="sc-scores"><span class="rv">1</span>/10 | <span class="gv">9</span>/10</div>
+        </div>
+        <div class="sc-row">
+          <div class="sc-dim">Orchestration</div>
+          <div class="sc-bars">
+            <div class="sc-bar red" style="width:10%"></div>
+            <div class="sc-bar green" style="width:90%"></div>
+          </div>
+          <div class="sc-scores"><span class="rv">1</span>/10 | <span class="gv">9</span>/10</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION C: STATS ROW (~90px) -->
+    <div class="stats">
+      <div class="stat"><div class="sv red">85%</div><div class="sl">Projects Fail Day 1</div></div>
+      <div class="stat"><div class="sv blue">5-Step</div><div class="sl">FDE Pipeline</div></div>
+      <div class="stat"><div class="sv green">4 Layers</div><div class="sl">Security Stack</div></div>
+    </div>
+
+    <!-- SECTION D: TECH STACK COMPARISON (~55px) -->
+    <div class="tech-compare">
+      <div class="tech-row">
+        <div class="tech-row-label sandbox">Sandbox</div>
+        <div class="tech-pills">
+          <span class="tp red">Jupyter</span>
+          <span class="tp red">Pandas</span>
+          <span class="tp red">CSV</span>
+          <span class="tp red">OpenAI</span>
+          <span class="tp red">Console</span>
+        </div>
+      </div>
+      <div class="tech-row">
+        <div class="tech-row-label fde">FDE</div>
+        <div class="tech-pills">
+          <span class="tp green">LangGraph</span>
+          <span class="tp green">RBAC</span>
+          <span class="tp green">Pinecone</span>
+          <span class="tp green">Docker</span>
+          <span class="tp green">AWS</span>
+          <span class="tp green">Streamlit</span>
+          <span class="tp green">CI/CD</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION E: QUOTE CALLOUT (~50px) -->
+    <div class="quote-box">
+      <p>"85% of enterprise AI projects fail on first deployment." — Gartner</p>
+    </div>
+
+    <!-- SECTION F: FOOTER (~50px) -->
+    <div class="foot">
+      <div class="auth"><div class="av">A</div><div><div class="nm">Aaryan Tiwari</div><div class="rl">Lead Gen AI Engineer · 5 Years</div></div></div>
+      <div class="ftag">Follow for more →</div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+<div class="section-title">Carousel Slide</div>
+
+<!-- ===== SLIDE 2: MERGED CAROUSEL ===== -->
+<div class="slide-wrapper">
+  <div class="slide-label"><span>Slide 2 — Maturity + CTA</span><button class="btn-sm" onclick="downloadOne(this,'post1_slide2')">Download PNG</button></div>
+  <div class="s" data-name="post1_slide2" style="padding:32px 36px;">
+    <div class="grid-bg"></div>
+
+    <!-- SECTION A: TITLE BAR (~55px) -->
+    <div class="s2-titlebar">
+      <h2>The AI <span class="acc">Maturity Scale</span></h2>
+      <div class="muted">Most teams never get past Stage 2</div>
+    </div>
+
+    <!-- SECTION B: GAUGE TRACK (~65px) -->
+    <div class="s2-gauge">
+      <div class="s2-gauge-bar">
+        <div class="s2-gauge-nodes">
+          <div class="s2-gauge-node gn1">1</div>
+          <div class="s2-gauge-node gn2">2</div>
+          <div class="s2-gauge-node gn3">3</div>
+          <div class="s2-gauge-node gn4">4</div>
+          <div class="s2-gauge-node gn5">5</div>
+        </div>
+      </div>
+      <div class="s2-gauge-labels">
+        <span>Prototype</span>
+        <span>Validated</span>
+        <span>Secured</span>
+        <span>Orchestrated</span>
+        <span>Production</span>
+      </div>
+    </div>
+
+    <!-- SECTION C: 5 MATURITY CARDS (~240px, flex:1, primary visual) -->
+    <div class="s2-maturity">
+      <div class="s2-mcard m1">
+        <div class="mc-icon">📓</div>
+        <div class="mc-name">Jupyter</div>
+        <div class="mc-desc">Local notebook, CSV, single prompt</div>
+        <div class="mc-tag">85% STOP HERE</div>
+      </div>
+      <div class="s2-mcard m2">
+        <div class="mc-icon">⚙️</div>
+        <div class="mc-name">API + DB</div>
+        <div class="mc-desc">Live database, basic error handling</div>
+        <div class="mc-tag">STAGE 2</div>
+      </div>
+      <div class="s2-mcard m3">
+        <div class="mc-icon">🔒</div>
+        <div class="mc-name">RBAC</div>
+        <div class="mc-desc">Read-only users, DENY rules, isolation</div>
+        <div class="mc-tag">STAGE 3</div>
+      </div>
+      <div class="s2-mcard m4">
+        <div class="mc-icon">🧠</div>
+        <div class="mc-name">LangGraph</div>
+        <div class="mc-desc">Multi-turn state, self-correcting loops</div>
+        <div class="mc-tag">STAGE 4</div>
+      </div>
+      <div class="s2-mcard m5">
+        <div class="mc-icon">🚀</div>
+        <div class="mc-name">Deployed</div>
+        <div class="mc-desc">Docker, CI/CD, Streamlit, AWS EC2</div>
+        <div class="mc-tag">FDE LEVEL</div>
+      </div>
+    </div>
+
+    <!-- SECTION D: INDUSTRY DISTRIBUTION STACKED BAR (~55px) -->
+    <div style="margin-bottom:14px;">
+      <div style="font-size:14px;font-weight:800;color:#94a3b8;margin-bottom:6px;">Industry Distribution</div>
+      <div class="s2-distbar">
+        <div class="seg" style="width:45%;background:linear-gradient(90deg,#ef4444,#f87171);">
+          <span style="color:#fff;font-size:13px;font-weight:800;">Stage 1: 45%</span>
+        </div>
+        <div class="seg" style="width:25%;background:linear-gradient(90deg,#f59e0b,#fbbf24);">
+          <span style="font-size:13px;font-weight:800;">S2: 25%</span>
+        </div>
+        <div class="seg" style="width:15%;background:linear-gradient(90deg,#38bdf8,#7dd3fc);">
+          <span style="font-size:13px;font-weight:800;">S3: 15%</span>
+        </div>
+        <div class="seg" style="width:10%;background:linear-gradient(90deg,#10b981,#34d399);">
+          <span style="font-size:13px;font-weight:800;">10%</span>
+        </div>
+        <div class="seg" style="width:5%;background:linear-gradient(90deg,#22c55e,#4ade80);">
+          <span style="font-size:13px;font-weight:800;">5%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION E: KEY INSIGHT CALLOUT (~75px) -->
+    <div class="s2-insight">
+      <div class="ii">💡</div>
+      <div class="it"><strong>Key Insight:</strong> The gap between Stage 2 and Stage 3 is where most projects die. Security isn't optional — it's the gateway to production.</div>
+    </div>
+
+    <!-- SECTION F: WHAT YOU'LL LEARN 2x2 (~210px) -->
+    <div class="s2-learn-title">What You'll Learn</div>
+    <div class="s2-learn">
+      <div class="s2-lcard">
+        <div class="lc-icon">🔒</div>
+        <div>
+          <div class="lc-label">Enterprise Security</div>
+          <div class="lc-desc">RBAC, row-level isolation, DENY rules</div>
+        </div>
+      </div>
+      <div class="s2-lcard">
+        <div class="lc-icon">🧠</div>
+        <div>
+          <div class="lc-label">AI Orchestration</div>
+          <div class="lc-desc">LangGraph, multi-agent state machines</div>
+        </div>
+      </div>
+      <div class="s2-lcard">
+        <div class="lc-icon">🚀</div>
+        <div>
+          <div class="lc-label">Production Deploy</div>
+          <div class="lc-desc">Docker, CI/CD, AWS EC2 pipelines</div>
+        </div>
+      </div>
+      <div class="s2-lcard">
+        <div class="lc-icon">📐</div>
+        <div>
+          <div class="lc-label">System Design</div>
+          <div class="lc-desc">Scalable architectures for enterprise AI</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION G: TAGS + CTA (~70px) -->
+    <div class="s2-bottom-row">
+      <div class="s2-tags">
+        <span>#AI</span>
+        <span>#ForwardDeployedEngineer</span>
+        <span>#GenAI</span>
+        <span>#EnterpriseAI</span>
+        <span>#Hiring</span>
+      </div>
+      <div class="s2-opp"><span class="opp-dot"></span> Open to Opportunities</div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+async function captureElement(el,filename){const canvas=await html2canvas(el,{width:1080,height:1080,scale:2,backgroundColor:null,useCORS:true,logging:false,onclone:function(doc){doc.querySelectorAll('.slide-label,.toolbar,.btn-sm').forEach(e=>e.style.display='none')}});const link=document.createElement('a');link.download=filename+'.png';link.href=canvas.toDataURL('image/png');link.click()}
+async function downloadOne(btn,name){const el=btn.closest('.slide-wrapper').querySelector('[data-name]');btn.textContent='Exporting...';await captureElement(el,name);btn.textContent='Done!';setTimeout(()=>btn.textContent='Download PNG',2000)}
+async function downloadAll(){const s=document.getElementById('status');const els=document.querySelectorAll('[data-name]');for(let i=0;i<els.length;i++){s.textContent=`Exporting ${i+1} of ${els.length}...`;await captureElement(els[i],els[i].dataset.name);await new Promise(r=>setTimeout(r,500))}s.textContent=`Done! ${els.length} PNGs downloaded.`;setTimeout(()=>s.textContent='',4000)}
+</script>
+</body>
+</html>

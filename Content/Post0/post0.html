@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Post 0 — What is an FDE?</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Inter',sans-serif;background:#070b12;color:#e2e8f0;padding:40px;display:flex;flex-direction:column;align-items:center;gap:48px}
+  .toolbar{position:fixed;top:0;left:0;right:0;background:rgba(7,11,18,0.95);backdrop-filter:blur(12px);border-bottom:1px solid #1e293b;padding:14px 32px;display:flex;align-items:center;justify-content:space-between;z-index:100}
+  .toolbar h2{font-size:19px;font-weight:700;color:#f1f5f9}
+  .toolbar .actions{display:flex;gap:16px;align-items:center}
+  .btn-ghost{padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid rgba(56,189,248,0.2);background:rgba(56,189,248,0.1);color:#38bdf8;font-family:'Inter',sans-serif}
+  .status{font-size:12px;color:#64748b;min-width:200px;text-align:right}
+  .spacer{height:60px}
+  .slide-wrapper{display:flex;flex-direction:column;align-items:center;gap:12px}
+  .slide-label{display:flex;align-items:center;justify-content:space-between;width:1080px}
+  .slide-label span{font-size:13px;font-weight:600;color:#475569;text-transform:uppercase;letter-spacing:0.5px}
+  .btn-sm{padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid rgba(56,189,248,0.2);background:rgba(56,189,248,0.08);color:#38bdf8;font-family:'Inter',sans-serif}
+  .divider{width:1080px;height:1px;background:linear-gradient(90deg,transparent,#1e293b,transparent);margin:8px 0}
+  .section-title{font-size:13px;font-weight:700;color:#38bdf8;text-transform:uppercase;letter-spacing:1px;width:1080px;text-align:center}
+
+  /* SLIDE BASE */
+  .s{width:1080px;height:1080px;border-radius:24px;padding:28px;display:flex;flex-direction:column;position:relative;overflow:hidden;background:linear-gradient(145deg,#0d1224,#111a2e,#0a1628)}
+  .s::before{content:'';position:absolute;top:-200px;right:-200px;width:600px;height:600px;background:radial-gradient(circle,rgba(56,189,248,0.06) 0%,transparent 70%);pointer-events:none}
+  .s::after{content:'';position:absolute;bottom:-150px;left:-150px;width:500px;height:500px;background:radial-gradient(circle,rgba(16,185,129,0.04) 0%,transparent 70%);pointer-events:none}
+  .grid-bg{position:absolute;inset:0;background-image:radial-gradient(rgba(56,189,248,0.03) 1px,transparent 1px);background-size:28px 28px;pointer-events:none}
+
+  /* COMMON */
+  .badge{display:inline-flex;align-items:center;gap:10px;padding:8px 18px;border-radius:100px;font-size:15px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;width:fit-content;margin-bottom:18px}
+  .badge.blue{background:rgba(56,189,248,0.1);border:1px solid rgba(56,189,248,0.25);color:#38bdf8}
+  .badge .dot{width:8px;height:8px;border-radius:50%;background:currentColor;animation:pulse 2s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+
+  .foot{display:flex;align-items:center;justify-content:space-between;padding-top:8px;border-top:1px solid rgba(255,255,255,0.06);margin-top:auto}
+  .auth{display:flex;align-items:center;gap:16px}
+  .av{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#38bdf8,#10b981);display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800;color:#0a0e1a}
+  .auth .nm{font-size:15px;font-weight:700;color:#f1f5f9}
+  .auth .rl{font-size:13px;color:#64748b}
+  .ftag{background:rgba(56,189,248,0.1);border:1px solid rgba(56,189,248,0.2);color:#38bdf8;padding:5px 14px;border-radius:6px;font-size:13px;font-weight:600}
+
+  /* ============ SLIDE 1: HERO ============ */
+  .hero-title{font-size:40px;font-weight:900;line-height:1.08;letter-spacing:-1.5px;margin-bottom:2px;color:#f8fafc}
+  .hero-title .acc{color:#38bdf8;text-shadow:0 0 40px rgba(56,189,248,0.3)}
+  .hero-sub{font-size:19px;color:#64748b;margin-bottom:14px;line-height:1.3}
+
+  /* Definition box */
+  .def-box{border-left:4px solid #38bdf8;background:rgba(56,189,248,0.05);border-radius:0 8px 8px 0;padding:16px 20px;margin-bottom:14px}
+  .def-box p{font-size:16px;color:#cbd5e1;line-height:1.4}
+
+  /* Comparison table */
+  .cmp-table{width:100%;border-collapse:collapse;margin-bottom:14px}
+  .cmp-table th{background:rgba(255,255,255,0.04);font-size:14px;font-weight:800;color:#64748b;padding:6px 8px;text-align:left;border-bottom:1px solid #1e293b;text-transform:uppercase;letter-spacing:0.3px}
+  .cmp-table th.fde-col{color:#38bdf8}
+  .cmp-table td{font-size:14px;padding:5px 8px;border-bottom:1px solid rgba(30,41,59,0.5);color:#94a3b8;vertical-align:top;line-height:1.3}
+  .cmp-table td.dim{font-weight:700;color:#cbd5e1;width:80px}
+  .cmp-table td.fde-cell{background:rgba(52,211,153,0.06);color:#a7f3d0;font-weight:600}
+
+  /* Responsibility cards */
+  .resp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px}
+  .resp-card{background:rgba(255,255,255,0.02);border:1px solid #1e293b;border-radius:10px;padding:16px 16px 8px;display:flex;flex-direction:column;gap:2px}
+  .resp-card .rc-icon{font-size:36px;line-height:1}
+  .resp-card .rc-title{font-size:16px;font-weight:800;color:#f1f5f9}
+  .resp-card .rc-desc{font-size:14px;color:#64748b;line-height:1.25}
+  .resp-card.blue-top{border-top:3px solid #38bdf8}
+  .resp-card.purple-top{border-top:3px solid #a78bfa}
+  .resp-card.red-top{border-top:3px solid #f87171}
+  .resp-card.teal-top{border-top:3px solid #2dd4bf}
+  .resp-card.green-top{border-top:3px solid #34d399}
+  .resp-card.amber-top{border-top:3px solid #fbbf24}
+
+  /* Stats row */
+  .stats{display:flex;gap:16px;margin-bottom:14px}
+  .stat{flex:1;background:rgba(255,255,255,0.03);border:1px solid #1e293b;border-radius:10px;padding:16px 20px;text-align:center}
+  .stat .sv{font-size:38px;font-weight:900;letter-spacing:-1px}
+  .stat .sv.green{color:#34d399}
+  .stat .sv.blue{color:#38bdf8}
+  .stat .sv.purple{color:#a78bfa}
+  .stat .sl{font-size:15px;color:#64748b;font-weight:600;margin-top:1px}
+
+  /* Tech pills */
+  .tech-pills-row{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px}
+  .tpill{padding:4px 12px;border-radius:8px;font-size:19px;font-weight:700;background:rgba(56,189,248,0.08);border:1px solid rgba(56,189,248,0.18);color:#7dd3fc;white-space:nowrap}
+
+  /* ============ SLIDE 2 ============ */
+  .s2-title{font-size:38px;font-weight:900;letter-spacing:-0.5px;color:#f8fafc;margin-bottom:18px}
+  .s2-title .acc{color:#38bdf8;text-shadow:0 0 30px rgba(56,189,248,0.3)}
+
+  /* Timeline */
+  .timeline{display:flex;gap:16px;margin-bottom:16px;position:relative}
+  .timeline::before{content:'';position:absolute;bottom:-6px;left:20px;right:20px;height:3px;background:linear-gradient(90deg,#38bdf8,#a78bfa,#34d399);border-radius:2px;z-index:0}
+  .tl-phase{flex:1;border-radius:12px;padding:16px 14px 14px;position:relative;z-index:1;display:flex;flex-direction:column;gap:14px}
+  .tl-phase.blue-phase{background:rgba(56,189,248,0.08);border:1px solid rgba(56,189,248,0.2)}
+  .tl-phase.purple-phase{background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.2)}
+  .tl-phase.green-phase{background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.2)}
+  .tl-phase .tl-icon{font-size:34px;line-height:1}
+  .tl-phase .tl-label{font-size:22px;font-weight:800}
+  .tl-phase.blue-phase .tl-label{color:#38bdf8}
+  .tl-phase.purple-phase .tl-label{color:#a78bfa}
+  .tl-phase.green-phase .tl-label{color:#34d399}
+  .tl-phase .tl-desc{font-size:18px;color:#94a3b8;line-height:1.35}
+
+  /* What FDE Owns */
+  .owns-title{font-size:22px;font-weight:800;color:#f1f5f9;margin-bottom:14px}
+  .owns-row{display:flex;gap:14px;margin-bottom:18px}
+  .owns-card{flex:1;background:rgba(255,255,255,0.03);border:1px solid #1e293b;border-radius:10px;padding:12px 10px 10px;display:flex;flex-direction:column;gap:16px;text-align:center}
+  .owns-card .oc-icon{font-size:34px;line-height:1}
+  .owns-card .oc-title{font-size:17px;font-weight:800;color:#f1f5f9}
+  .owns-card .oc-desc{font-size:15px;color:#64748b;line-height:1.25}
+
+  /* Career path */
+  .career-title{font-size:22px;font-weight:800;color:#f1f5f9;margin-bottom:14px}
+  .career-track{display:flex;align-items:center;gap:0;margin-bottom:18px;position:relative}
+  .career-node{padding:12px 18px;border-radius:10px;font-size:17px;font-weight:700;border:1px solid #1e293b;background:rgba(255,255,255,0.03);color:#64748b;white-space:nowrap;position:relative;z-index:1}
+  .career-node.dim{opacity:0.6}
+  .career-node.bright{opacity:1;color:#cbd5e1}
+  .career-node.fde-node{border-color:#38bdf8;color:#38bdf8;background:rgba(56,189,248,0.1);box-shadow:0 0 16px rgba(56,189,248,0.2)}
+  .career-arrow{font-size:18px;color:#475569;padding:0 6px;flex-shrink:0;z-index:1}
+
+  /* Future outlook */
+  .future-row{display:flex;gap:16px;margin-bottom:16px;flex:1}
+  .future-col{flex:1;display:flex;flex-direction:column;gap:14px}
+  .future-col-title{font-size:22px;font-weight:800;color:#f1f5f9;margin-bottom:4px}
+  .bar-item{display:flex;flex-direction:column;gap:16px}
+  .bar-item-text{font-size:19px;color:#94a3b8;line-height:1.3}
+  .bar-indicator{height:8px;border-radius:4px;background:linear-gradient(90deg,#38bdf8,#34d399)}
+  .company-pills{display:flex;gap:14px;flex-wrap:wrap}
+  .co-pill{padding:8px 16px;border-radius:8px;font-size:19px;font-weight:700;background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.18);color:#c4b5fd;white-space:nowrap}
+
+  /* Tags + CTA */
+  .s2-cta-quote{font-size:19px;font-style:italic;color:#94a3b8;line-height:1.3;margin-bottom:16px}
+  .s2-tags{display:flex;gap:12px;flex-wrap:wrap}
+  .s2-tags span{background:rgba(56,189,248,0.08);border:1px solid rgba(56,189,248,0.15);color:#38bdf8;padding:8px 16px;border-radius:8px;font-size:16px;font-weight:700}
+</style>
+</head>
+<body>
+<div class="spacer"></div>
+<div class="toolbar"><h2>Post 0 — What is an FDE?</h2><div class="actions"><button class="btn-ghost" onclick="downloadAll()">Download All PNGs</button><span class="status" id="status"></span></div></div>
+
+<!-- ===== SLIDE 1: HERO ===== -->
+<div class="slide-wrapper">
+  <div class="slide-label"><span>Hero Image</span><button class="btn-sm" onclick="downloadOne(this,'post0_hero')">Download PNG</button></div>
+  <div class="s" data-name="post0_hero" style="padding:36px 40px;">
+    <div class="grid-bg"></div>
+
+    <!-- SECTION A: BADGE + TITLE -->
+    <div class="badge blue"><span class="dot"></span> The FDE Role Explained</div>
+    <div class="hero-title">What is a <span class="acc">Forward Deployed Engineer?</span></div>
+    <div class="hero-sub">The fastest-growing role in enterprise AI — bridging the gap between AI research and real-world deployment.</div>
+
+    <!-- SECTION B: DEFINITION BOX -->
+    <div class="def-box">
+      <p>An FDE is an AI engineer who works directly with enterprise clients to deploy production-grade AI systems — handling everything from business translation to database security to cloud deployment.</p>
+    </div>
+
+    <!-- SECTION C: COMPARISON TABLE -->
+    <table class="cmp-table">
+      <thead>
+        <tr>
+          <th style="width:80px;">Dimension</th>
+          <th>ML Engineer</th>
+          <th>Data Scientist</th>
+          <th>Backend Eng</th>
+          <th class="fde-col" style="width:200px;">FDE</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="dim">Focus</td>
+          <td>Model training</td>
+          <td>Data analysis</td>
+          <td>APIs &amp; infra</td>
+          <td class="fde-cell">End-to-end delivery</td>
+        </tr>
+        <tr>
+          <td class="dim">Client Exp.</td>
+          <td>None</td>
+          <td>Low</td>
+          <td>None</td>
+          <td class="fde-cell">Direct — embedded with client</td>
+        </tr>
+        <tr>
+          <td class="dim">Deploys</td>
+          <td>Rarely</td>
+          <td>Never</td>
+          <td>Yes (backend)</td>
+          <td class="fde-cell">Always — on client infra</td>
+        </tr>
+        <tr>
+          <td class="dim">Security</td>
+          <td>Not their job</td>
+          <td>Not their job</td>
+          <td>Basic</td>
+          <td class="fde-cell">RBAC, DENY rules, zero mutation</td>
+        </tr>
+        <tr>
+          <td class="dim">Stack</td>
+          <td>PyTorch, notebooks</td>
+          <td>Pandas, SQL</td>
+          <td>Node, Docker</td>
+          <td class="fde-cell">LangGraph, Pinecone, Docker, AWS</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- SECTION D: CORE RESPONSIBILITIES -->
+    <div class="resp-grid">
+      <div class="resp-card blue-top">
+        <div class="rc-icon">🎯</div>
+        <div class="rc-title">Business Translation</div>
+        <div class="rc-desc">Turn vague briefs into technical specs &amp; KPIs</div>
+      </div>
+      <div class="resp-card purple-top">
+        <div class="rc-icon">📐</div>
+        <div class="rc-title">System Architecture</div>
+        <div class="rc-desc">Design HLD/LLD for multi-source AI systems</div>
+      </div>
+      <div class="resp-card red-top">
+        <div class="rc-icon">🔒</div>
+        <div class="rc-title">Database Security</div>
+        <div class="rc-desc">RBAC, DENY rules, read-only views, zero mutation</div>
+      </div>
+      <div class="resp-card teal-top">
+        <div class="rc-icon">🧠</div>
+        <div class="rc-title">AI Orchestration</div>
+        <div class="rc-desc">LangGraph state machines with self-correction loops</div>
+      </div>
+      <div class="resp-card green-top">
+        <div class="rc-icon">🚀</div>
+        <div class="rc-title">Production Deploy</div>
+        <div class="rc-desc">Docker, CI/CD, Streamlit UI on AWS/Azure</div>
+      </div>
+      <div class="resp-card amber-top">
+        <div class="rc-icon">🤝</div>
+        <div class="rc-title">Client Communication</div>
+        <div class="rc-desc">Daily standups, demos, stakeholder alignment</div>
+      </div>
+    </div>
+
+    <!-- SECTION E: STATS ROW -->
+    <div class="stats">
+      <div class="stat"><div class="sv green">$180-250K</div><div class="sl">Avg FDE Salary</div></div>
+      <div class="stat"><div class="sv blue">3x Growth</div><div class="sl">Since 2023</div></div>
+      <div class="stat"><div class="sv purple">Palantir</div><div class="sl">Originated The Role</div></div>
+    </div>
+
+    <!-- SECTION F: TECH STACK PILLS -->
+    <div class="tech-pills-row">
+      <span class="tpill">LangGraph</span>
+      <span class="tpill">RBAC</span>
+      <span class="tpill">Pinecone</span>
+      <span class="tpill">Docker</span>
+      <span class="tpill">AWS</span>
+      <span class="tpill">Streamlit</span>
+      <span class="tpill">CI/CD</span>
+      <span class="tpill">MSSQL</span>
+      <span class="tpill">T-SQL</span>
+    </div>
+
+    <!-- SECTION G: FOOTER -->
+    <div class="foot">
+      <div class="auth"><div class="av">A</div><div><div class="nm">Aaryan Tiwari</div><div class="rl">Lead Gen AI Engineer · 5 Years</div></div></div>
+      <div class="ftag">Follow for more →</div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+<div class="section-title">Carousel Slides</div>
+
+<!-- ===== SLIDE 2: MERGED ===== -->
+<div class="slide-wrapper">
+  <div class="slide-label"><span>Slide 2 — Playbook + Career</span><button class="btn-sm" onclick="downloadOne(this,'post0_slide2')">Download PNG</button></div>
+  <div class="s" data-name="post0_slide2" style="padding:32px 36px;">
+    <div class="grid-bg"></div>
+
+    <!-- SECTION A: TITLE -->
+    <div class="s2-title">The FDE <span class="acc">Playbook</span> — Roles, Career &amp; Future</div>
+
+    <!-- SECTION B: DAY IN THE LIFE TIMELINE -->
+    <div class="timeline">
+      <div class="tl-phase blue-phase">
+        <div class="tl-icon">☀️</div>
+        <div class="tl-label">MORNING</div>
+        <div class="tl-desc">Client sync, requirement mapping, constraint analysis</div>
+      </div>
+      <div class="tl-phase purple-phase">
+        <div class="tl-icon">💻</div>
+        <div class="tl-label">AFTERNOON</div>
+        <div class="tl-desc">Architecture design, RBAC setup, LangGraph orchestration</div>
+      </div>
+      <div class="tl-phase green-phase">
+        <div class="tl-icon">🚀</div>
+        <div class="tl-label">EVENING</div>
+        <div class="tl-desc">Deploy, monitor, iterate, client demo</div>
+      </div>
+    </div>
+
+    <!-- SECTION C: WHAT AN FDE OWNS -->
+    <div class="owns-title">What an FDE Owns</div>
+    <div class="owns-row">
+      <div class="owns-card">
+        <div class="oc-icon">📋</div>
+        <div class="oc-title">Brief → Spec</div>
+        <div class="oc-desc">Translate business to tech</div>
+      </div>
+      <div class="owns-card">
+        <div class="oc-icon">🔒</div>
+        <div class="oc-title">Secure Data</div>
+        <div class="oc-desc">RBAC + DENY rules</div>
+      </div>
+      <div class="owns-card">
+        <div class="oc-icon">🧠</div>
+        <div class="oc-title">Orchestrate</div>
+        <div class="oc-desc">LangGraph multi-source</div>
+      </div>
+      <div class="owns-card">
+        <div class="oc-icon">🚀</div>
+        <div class="oc-title">Ship It</div>
+        <div class="oc-desc">Docker + AWS deploy</div>
+      </div>
+      <div class="owns-card">
+        <div class="oc-icon">📊</div>
+        <div class="oc-title">Own Outcome</div>
+        <div class="oc-desc">Metrics + iteration</div>
+      </div>
+    </div>
+
+    <!-- SECTION D: CAREER PATH -->
+    <div class="career-title">The FDE Career Ladder</div>
+    <div class="career-track">
+      <div class="career-node dim">Junior AI Eng</div>
+      <div class="career-arrow">→</div>
+      <div class="career-node dim">AI Engineer</div>
+      <div class="career-arrow">→</div>
+      <div class="career-node bright">Senior AI Eng</div>
+      <div class="career-arrow">→</div>
+      <div class="career-node fde-node">Forward Deployed Eng</div>
+      <div class="career-arrow">→</div>
+      <div class="career-node bright">AI Architect / CTO</div>
+    </div>
+
+    <!-- SECTION E: FUTURE OUTLOOK -->
+    <div class="future-row">
+      <div class="future-col">
+        <div class="future-col-title">Why FDE is Exploding</div>
+        <div class="bar-item">
+          <div class="bar-item-text">$200B+ enterprise AI spend by 2025</div>
+          <div class="bar-indicator" style="width:92%"></div>
+        </div>
+        <div class="bar-item">
+          <div class="bar-item-text">85% of AI projects need deployment help</div>
+          <div class="bar-indicator" style="width:85%"></div>
+        </div>
+        <div class="bar-item">
+          <div class="bar-item-text">Companies hiring FDEs over traditional ML engineers</div>
+          <div class="bar-indicator" style="width:75%"></div>
+        </div>
+        <div class="bar-item">
+          <div class="bar-item-text">Every Fortune 500 building internal AI — needs people who can ship</div>
+          <div class="bar-indicator" style="width:95%"></div>
+        </div>
+      </div>
+      <div class="future-col">
+        <div class="future-col-title">Who's Hiring FDEs</div>
+        <div class="company-pills">
+          <span class="co-pill">Palantir</span>
+          <span class="co-pill">Scale AI</span>
+          <span class="co-pill">Anduril</span>
+          <span class="co-pill">Databricks</span>
+          <span class="co-pill">Snowflake</span>
+          <span class="co-pill">AI Startups</span>
+          <span class="co-pill">McKinsey</span>
+          <span class="co-pill">BCG</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION F: TAGS + CTA -->
+    <div class="s2-cta-quote">"The role didn't exist 5 years ago. Now it's the most in-demand AI position in enterprise."</div>
+    <div class="s2-tags">
+      <span>#AI</span>
+      <span>#ForwardDeployedEngineer</span>
+      <span>#FDE</span>
+      <span>#EnterpriseAI</span>
+      <span>#AIEngineer</span>
+      <span>#OpenToWork</span>
+      <span>#AICareers</span>
+      <span>#TechJobs</span>
+      <span>#AIDeployment</span>
+      <span>#ProductionAI</span>
+      <span>#Hiring</span>
+      <span>#AIArchitect</span>
+    </div>
+
+  </div>
+</div>
+
+<script>
+async function captureElement(el,filename){const canvas=await html2canvas(el,{width:1080,height:1080,scale:2,backgroundColor:null,useCORS:true,logging:false,onclone:function(doc){doc.querySelectorAll('.slide-label,.toolbar,.btn-sm').forEach(e=>e.style.display='none')}});const link=document.createElement('a');link.download=filename+'.png';link.href=canvas.toDataURL('image/png');link.click()}
+async function downloadOne(btn,name){const el=btn.closest('.slide-wrapper').querySelector('[data-name]');btn.textContent='Exporting...';await captureElement(el,name);btn.textContent='Done!';setTimeout(()=>btn.textContent='Download PNG',2000)}
+async function downloadAll(){const s=document.getElementById('status');const els=document.querySelectorAll('[data-name]');for(let i=0;i<els.length;i++){s.textContent=`Exporting ${i+1} of ${els.length}...`;await captureElement(els[i],els[i].dataset.name);await new Promise(r=>setTimeout(r,500))}s.textContent=`Done! ${els.length} PNGs downloaded.`;setTimeout(()=>s.textContent='',4000)}
+</script>
+</body>
+</html>

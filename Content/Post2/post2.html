@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Post 2 — Why AI Projects Die</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Inter',sans-serif;background:#070b12;color:#e2e8f0;padding:40px;display:flex;flex-direction:column;align-items:center;gap:48px}
+  .toolbar{position:fixed;top:0;left:0;right:0;background:rgba(7,11,18,0.95);backdrop-filter:blur(12px);border-bottom:1px solid #1e293b;padding:14px 32px;display:flex;align-items:center;justify-content:space-between;z-index:100}
+  .toolbar h2{font-size:19px;font-weight:700;color:#f1f5f9}
+  .toolbar .actions{display:flex;gap:16px;align-items:center}
+  .btn-ghost{padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid rgba(56,189,248,0.2);background:rgba(56,189,248,0.1);color:#38bdf8;font-family:'Inter',sans-serif}
+  .status{font-size:12px;color:#64748b;min-width:200px;text-align:right}
+  .spacer{height:60px}
+  .slide-wrapper{display:flex;flex-direction:column;align-items:center;gap:12px}
+  .slide-label{display:flex;align-items:center;justify-content:space-between;width:1080px}
+  .slide-label span{font-size:13px;font-weight:600;color:#475569;text-transform:uppercase;letter-spacing:0.5px}
+  .btn-sm{padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid rgba(56,189,248,0.2);background:rgba(56,189,248,0.08);color:#38bdf8;font-family:'Inter',sans-serif}
+  .divider{width:1080px;height:1px;background:linear-gradient(90deg,transparent,#1e293b,transparent);margin:8px 0}
+  .section-title{font-size:13px;font-weight:700;color:#38bdf8;text-transform:uppercase;letter-spacing:1px;width:1080px;text-align:center}
+
+  /* SLIDE BASE */
+  .s{width:1080px;height:1080px;border-radius:24px;padding:28px 30px;display:flex;flex-direction:column;position:relative;overflow:hidden;background:linear-gradient(145deg,#0d1224,#111a2e,#0a1628)}
+  .s::before{content:'';position:absolute;top:-200px;right:-200px;width:600px;height:600px;background:radial-gradient(circle,rgba(248,113,113,0.05) 0%,transparent 70%);pointer-events:none}
+  .s::after{content:'';position:absolute;bottom:-150px;left:-150px;width:500px;height:500px;background:radial-gradient(circle,rgba(16,185,129,0.04) 0%,transparent 70%);pointer-events:none}
+  .grid-bg{position:absolute;inset:0;background-image:radial-gradient(rgba(56,189,248,0.03) 1px,transparent 1px);background-size:28px 28px;pointer-events:none}
+
+  /* COMMON */
+  .badge{display:inline-flex;align-items:center;gap:10px;padding:8px 18px;border-radius:100px;font-size:15px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;width:fit-content;margin-bottom:8px}
+  .badge.red{background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.25);color:#f87171}
+  .badge .dot{width:8px;height:8px;border-radius:50%;background:currentColor;animation:pulse 2s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+
+  .foot{display:flex;align-items:center;justify-content:space-between;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06);margin-top:auto;flex-shrink:0}
+  .auth{display:flex;align-items:center;gap:12px}
+  .av{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#38bdf8,#10b981);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:#0a0e1a;flex-shrink:0}
+  .auth .nm{font-size:15px;font-weight:700;color:#f1f5f9}
+  .auth .rl{font-size:13px;color:#64748b}
+  .ftag{background:rgba(56,189,248,0.1);border:1px solid rgba(56,189,248,0.2);color:#38bdf8;padding:5px 14px;border-radius:6px;font-size:13px;font-weight:600}
+
+  /* COLOR ACCENTS */
+  .red-acc{color:#f87171;text-shadow:0 0 40px rgba(248,113,113,0.3)}
+  .blue-acc{color:#38bdf8;text-shadow:0 0 40px rgba(56,189,248,0.3)}
+  .green-acc{color:#34d399;text-shadow:0 0 40px rgba(52,211,153,0.3)}
+
+  /* ============ HERO ============ */
+  /*
+    DYNAMIC SIZING — SLIDE 1:
+    Available: 1024px (1080 - 56 padding)
+    Badge+Title+Sub: ~90px
+    Funnel + Root cause (side by side): ~420px + ~214px extra = ~530px (PRIMARY)
+    Pipeline flow: ~100px
+    Callout boxes: ~70px
+    Footer: ~50px
+    Gaps: ~60px
+    Total: ~900px — flex:1 on hero-main absorbs remainder
+  */
+  .hero-title{font-size:40px;font-weight:900;line-height:1.08;letter-spacing:-1.5px;margin-bottom:4px;color:#f8fafc}
+  .hero-sub{font-size:17px;color:#64748b;margin-bottom:12px;line-height:1.3}
+
+  /* Side-by-side columns */
+  .hero-main{display:flex;gap:16px;flex:1;min-height:0}
+
+  /* LEFT: Failure Funnel */
+  .funnel-col{flex:1;display:flex;flex-direction:column;gap:12px}
+  .col-title{font-size:16px;font-weight:800;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px}
+  .col-title.red{color:#f87171}
+  .col-title.blue{color:#38bdf8}
+
+  .funnel-bar{display:flex;align-items:center;gap:12px;border-radius:10px;padding:16px 16px;position:relative}
+  .funnel-bar .fb-icon{font-size:26px;flex-shrink:0}
+  .funnel-bar .fb-text{font-size:15px;font-weight:700;color:#f1f5f9;flex:1;line-height:1.25}
+  .funnel-bar .fb-pct{font-size:28px;font-weight:900;flex-shrink:0;letter-spacing:-1px}
+  .fb1{width:100%;background:linear-gradient(90deg,rgba(248,113,113,0.12),rgba(248,113,113,0.04));border:1px solid rgba(248,113,113,0.15)}
+  .fb1 .fb-pct{color:#f87171}
+  .fb2{width:88%;background:linear-gradient(90deg,rgba(239,68,68,0.12),rgba(239,68,68,0.04));border:1px solid rgba(239,68,68,0.15)}
+  .fb2 .fb-pct{color:#ef4444}
+  .fb3{width:68%;background:linear-gradient(90deg,rgba(220,38,38,0.15),rgba(220,38,38,0.04));border:1px solid rgba(220,38,38,0.15)}
+  .fb3 .fb-pct{color:#dc2626}
+  .fb4{width:48%;background:linear-gradient(90deg,rgba(185,28,28,0.18),rgba(185,28,28,0.04));border:1px solid rgba(185,28,28,0.18)}
+  .fb4 .fb-pct{color:#b91c1c}
+
+  /* RIGHT: Root Cause */
+  .root-col{flex:1;display:flex;flex-direction:column;gap:10px}
+  .root-bar{display:flex;align-items:center;gap:12px;border-radius:10px;padding:10px 14px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05)}
+  .root-bar .rb-icon{font-size:22px;flex-shrink:0}
+  .root-bar .rb-label{font-size:15px;font-weight:700;color:#f1f5f9;flex:1}
+  .root-bar .rb-pct{font-size:22px;font-weight:900;flex-shrink:0;letter-spacing:-0.5px;min-width:44px;text-align:right}
+  .rb-fill-wrap{padding:0 14px;margin-bottom:2px}
+  .rb-fill{height:6px;border-radius:3px}
+
+  /* FDE Pipeline */
+  .pipeline-section{flex-shrink:0;margin-top:8px}
+  .pipeline-title{font-size:16px;font-weight:800;color:#34d399;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
+  .pipeline-flow{display:flex;align-items:center;gap:0;justify-content:space-between}
+  .pipeline-node{display:flex;flex-direction:column;align-items:center;gap:2px;background:rgba(52,211,153,0.05);border:1px solid rgba(52,211,153,0.12);border-radius:10px;padding:10px 14px;min-width:100px;text-align:center}
+  .pipeline-node .pn-icon{font-size:22px}
+  .pipeline-node .pn-name{font-size:14px;font-weight:800;color:#f1f5f9}
+  .pipeline-node .pn-desc{font-size:13px;color:#94a3b8;font-weight:600}
+  .pipeline-arrow{font-size:18px;color:#34d399;flex-shrink:0;margin:0 2px}
+  .shipped-badge{background:linear-gradient(135deg,#059669,#34d399);color:#0a0e1a;padding:8px 14px;border-radius:10px;font-size:15px;font-weight:900;letter-spacing:0.5px;text-transform:uppercase;display:flex;align-items:center;gap:8px;flex-shrink:0}
+
+  /* Callout boxes */
+  .callout-row{display:flex;gap:12px;margin-top:8px;flex-shrink:0}
+  .callout-box{flex:1;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:12px}
+  .callout-box .cb-icon{font-size:24px;flex-shrink:0}
+  .callout-box .cb-text{font-size:14px;color:#94a3b8;line-height:1.35;font-weight:600}
+  .callout-box .cb-text strong{color:#f87171;font-weight:800}
+  .callout-box .cb-src{color:#475569;font-weight:600;font-size:13px}
+
+  /* ============ SLIDE 2 ============ */
+  /*
+    DYNAMIC SIZING — SLIDE 2:
+    Available: 1024px
+    Title + stat ring: ~120px
+    Fragile pipeline: ~140px
+    FDE pipeline: ~160px
+    Failure timeline: ~180px
+    What 15% Do grid: ~200px
+    Tags: ~70px
+    Gaps: ~80px
+    Total: ~950px → ~74px slack → distribute to pipeline nodes
+  */
+
+  /* SECTION A: Title + Stat Ring */
+  .s2-header{display:flex;align-items:center;justify-content:space-between;flex-shrink:0;margin-bottom:14px}
+  .s2-header-left{flex:1}
+  .s2-title{font-size:32px;font-weight:900;letter-spacing:-0.8px;line-height:1.15;color:#f8fafc}
+  .s2-subtitle{font-size:16px;color:#64748b;margin-top:4px;font-weight:600}
+  .s2-ring{width:96px;height:96px;border-radius:50%;background:conic-gradient(#f87171 0% 85%,rgba(255,255,255,0.06) 85% 100%);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 0 30px rgba(248,113,113,0.12)}
+  .s2-ring-inner{width:74px;height:74px;border-radius:50%;background:linear-gradient(145deg,#0d1224,#111a2e);display:flex;align-items:center;justify-content:center;flex-direction:column}
+  .s2-ring-num{font-size:26px;font-weight:900;color:#f87171;line-height:1;letter-spacing:-1px}
+  .s2-ring-label{font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px}
+
+  /* SECTION B & C: Pipeline rows */
+  .s2-pipe-section{flex-shrink:0;margin-bottom:16px}
+  .s2-pipe-label{font-size:15px;font-weight:800;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;display:flex;align-items:center;gap:10px}
+  .s2-pipe-label.red{color:#f87171}
+  .s2-pipe-label.green{color:#34d399}
+  .s2-pipe-label .lbl-dot{width:8px;height:8px;border-radius:50%;background:currentColor;flex-shrink:0}
+
+  .s2-pipe-flow{display:flex;align-items:center;gap:0;padding:14px 16px;border-radius:12px}
+  .s2-pipe-flow.red-track{background:rgba(248,113,113,0.03);border:1px solid rgba(248,113,113,0.1)}
+  .s2-pipe-flow.green-track{background:rgba(52,211,153,0.03);border:1px solid rgba(52,211,153,0.1)}
+
+  .s2-node{display:flex;flex-direction:column;align-items:center;gap:2px;border-radius:10px;padding:10px 8px;min-width:0;flex:1;text-align:center}
+  .s2-node.rn{background:rgba(248,113,113,0.06);border:1px solid rgba(248,113,113,0.12)}
+  .s2-node.gn{background:rgba(52,211,153,0.06);border:1px solid rgba(52,211,153,0.12)}
+  .s2-node .nd-icon{font-size:24px;line-height:1.2}
+  .s2-node .nd-name{font-size:14px;font-weight:800;color:#f1f5f9;line-height:1.2}
+  .s2-node .nd-desc{font-size:13px;color:#94a3b8;font-weight:600;line-height:1.2}
+  .s2-arr{font-size:18px;flex-shrink:0;margin:0 3px;font-weight:700}
+  .s2-arr.red{color:rgba(248,113,113,0.4)}
+  .s2-arr.green{color:rgba(52,211,153,0.4)}
+  .s2-end{padding:10px 14px;border-radius:10px;font-size:15px;font-weight:900;letter-spacing:0.5px;text-transform:uppercase;display:flex;align-items:center;gap:8px;flex-shrink:0;white-space:nowrap}
+  .s2-end.red{background:rgba(248,113,113,0.12);border:2px solid rgba(248,113,113,0.25);color:#f87171}
+  .s2-end.green{background:linear-gradient(135deg,#059669,#34d399);color:#0a0e1a}
+
+  /* SECTION D: Failure Timeline */
+  .s2-timeline{flex-shrink:0;margin-bottom:16px}
+  .s2-timeline-title{font-size:20px;font-weight:800;color:#f59e0b;margin-bottom:10px;letter-spacing:-0.3px}
+  .s2-tl-row{display:flex;gap:12px}
+  .s2-tl-card{flex:1;border-radius:10px;padding:18px 16px;text-align:center;position:relative;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);overflow:hidden}
+  .s2-tl-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:3px 3px 0 0}
+  .s2-tl-card.c1::before{background:#34d399}
+  .s2-tl-card.c2::before{background:#f59e0b}
+  .s2-tl-card.c3::before{background:#f87171}
+  .s2-tl-card.c4::before{background:#991b1b}
+  .s2-tl-card .tw{font-size:18px;font-weight:800;margin-bottom:4px}
+  .s2-tl-card.c1 .tw{color:#34d399}
+  .s2-tl-card.c2 .tw{color:#f59e0b}
+  .s2-tl-card.c3 .tw{color:#f87171}
+  .s2-tl-card.c4 .tw{color:#991b1b}
+  .s2-tl-card .te{font-size:14px;font-weight:600;color:#94a3b8;line-height:1.3}
+  .s2-tl-card .te-detail{font-size:13px;color:#64748b;line-height:1.3;margin-top:3px}
+
+  /* SECTION E: What the 15% Do */
+  .s2-diff{flex:1;min-height:0;display:flex;flex-direction:column;margin-bottom:12px}
+  .s2-diff-title{font-size:20px;font-weight:800;color:#34d399;margin-bottom:10px;letter-spacing:-0.3px}
+  .s2-diff-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;flex:1}
+  .s2-diff-card{background:rgba(52,211,153,0.04);border:1px solid rgba(52,211,153,0.1);border-radius:10px;padding:16px 16px;display:flex;align-items:flex-start;gap:12px}
+  .s2-diff-card .dci{font-size:28px;flex-shrink:0;line-height:1}
+  .s2-diff-card .dcl{font-size:16px;font-weight:800;color:#f1f5f9;line-height:1.2}
+  .s2-diff-card .dcd{font-size:14px;color:#94a3b8;line-height:1.3;margin-top:3px}
+
+  /* SECTION F: Tags */
+  .s2-tags{display:flex;gap:10px;flex-wrap:wrap;flex-shrink:0}
+  .s2-tags span{background:rgba(56,189,248,0.08);border:1px solid rgba(56,189,248,0.15);color:#38bdf8;padding:6px 14px;border-radius:8px;font-size:14px;font-weight:700}
+</style>
+</head>
+<body>
+<div class="spacer"></div>
+<div class="toolbar"><h2>Post 2 — Why AI Projects Die</h2><div class="actions"><button class="btn-ghost" onclick="downloadAll()">Download All PNGs</button><span class="status" id="status"></span></div></div>
+
+<!-- ===== SLIDE 1: HERO ===== -->
+<div class="slide-wrapper">
+  <div class="slide-label"><span>Hero Image</span><button class="btn-sm" onclick="downloadOne(this,'post2_hero')">Download PNG</button></div>
+  <div class="s" data-name="post2_hero">
+    <div class="grid-bg"></div>
+
+    <!-- SECTION A: Badge + Title + Subtitle (~90px) -->
+    <div class="badge red"><span class="dot"></span> Enterprise Reality Check</div>
+    <div class="hero-title">Why Most AI Projects <span class="red-acc">Die on Day 1</span></div>
+    <div class="hero-sub">85% of enterprise AI never reaches production. Here's the data behind the graveyard.</div>
+
+    <!-- SECTION B: Funnel + Root Cause side by side (PRIMARY ~530px, flex:1) -->
+    <div class="hero-main">
+      <!-- LEFT: Failure Funnel -->
+      <div class="funnel-col">
+        <div class="col-title red">Failure Funnel</div>
+        <div class="funnel-bar fb1">
+          <div class="fb-icon">&#x1F680;</div>
+          <div class="fb-text">AI Projects Kick Off</div>
+          <div class="fb-pct">100%</div>
+        </div>
+        <div class="funnel-bar fb2">
+          <div class="fb-icon">&#x1F4BE;</div>
+          <div class="fb-text">Hit Legacy Data &amp; Firewalls</div>
+          <div class="fb-pct">60%</div>
+        </div>
+        <div class="funnel-bar fb3">
+          <div class="fb-icon">&#x1F512;</div>
+          <div class="fb-text">No Security or RBAC</div>
+          <div class="fb-pct">35%</div>
+        </div>
+        <div class="funnel-bar fb4">
+          <div class="fb-icon">&#x1F4E6;</div>
+          <div class="fb-text">No Deploy Plan</div>
+          <div class="fb-pct">15%</div>
+        </div>
+      </div>
+
+      <!-- RIGHT: Root Cause Breakdown -->
+      <div class="root-col">
+        <div class="col-title blue">Root Cause Breakdown</div>
+
+        <div class="root-bar">
+          <div class="rb-icon">&#x1F4CA;</div>
+          <div class="rb-label">Data Incompatibility</div>
+          <div class="rb-pct" style="color:#f59e0b">40%</div>
+        </div>
+        <div class="rb-fill-wrap"><div class="rb-fill" style="width:100%;background:linear-gradient(90deg,#f59e0b,rgba(245,158,11,0.2))"></div></div>
+
+        <div class="root-bar">
+          <div class="rb-icon">&#x1F6E1;&#xFE0F;</div>
+          <div class="rb-label">No Security Layer</div>
+          <div class="rb-pct" style="color:#f87171">25%</div>
+        </div>
+        <div class="rb-fill-wrap"><div class="rb-fill" style="width:62%;background:linear-gradient(90deg,#f87171,rgba(248,113,113,0.2))"></div></div>
+
+        <div class="root-bar">
+          <div class="rb-icon">&#x26A0;&#xFE0F;</div>
+          <div class="rb-label">No Deploy Strategy</div>
+          <div class="rb-pct" style="color:#fbbf24">20%</div>
+        </div>
+        <div class="rb-fill-wrap"><div class="rb-fill" style="width:50%;background:linear-gradient(90deg,#fbbf24,rgba(251,191,36,0.2))"></div></div>
+
+        <div class="root-bar">
+          <div class="rb-icon">&#x1F4A8;</div>
+          <div class="rb-label">Scope Creep</div>
+          <div class="rb-pct" style="color:#64748b">15%</div>
+        </div>
+        <div class="rb-fill-wrap"><div class="rb-fill" style="width:37%;background:linear-gradient(90deg,#64748b,rgba(100,116,139,0.2))"></div></div>
+      </div>
+    </div>
+
+    <!-- SECTION C: FDE Pipeline (~100px) -->
+    <div class="pipeline-section">
+      <div class="pipeline-title">The FDE Pipeline</div>
+      <div class="pipeline-flow">
+        <div class="pipeline-node">
+          <div class="pn-icon">&#x1F50D;</div>
+          <div class="pn-name">Discovery</div>
+          <div class="pn-desc">Audit</div>
+        </div>
+        <div class="pipeline-arrow">&#x2192;</div>
+        <div class="pipeline-node">
+          <div class="pn-icon">&#x1F512;</div>
+          <div class="pn-name">RBAC</div>
+          <div class="pn-desc">Secure</div>
+        </div>
+        <div class="pipeline-arrow">&#x2192;</div>
+        <div class="pipeline-node">
+          <div class="pn-icon">&#x1F4E5;</div>
+          <div class="pn-name">Ingestion</div>
+          <div class="pn-desc">Connect</div>
+        </div>
+        <div class="pipeline-arrow">&#x2192;</div>
+        <div class="pipeline-node">
+          <div class="pn-icon">&#x1F9E0;</div>
+          <div class="pn-name">LangGraph</div>
+          <div class="pn-desc">Orchestrate</div>
+        </div>
+        <div class="pipeline-arrow">&#x2192;</div>
+        <div class="pipeline-node">
+          <div class="pn-icon">&#x2601;&#xFE0F;</div>
+          <div class="pn-name">AWS</div>
+          <div class="pn-desc">Deploy</div>
+        </div>
+        <div class="pipeline-arrow">&#x2192;</div>
+        <div class="shipped-badge">&#x2705; SHIPPED</div>
+      </div>
+    </div>
+
+    <!-- SECTION D: Callout Boxes (~70px) -->
+    <div class="callout-row">
+      <div class="callout-box">
+        <div class="cb-icon">&#x1F4B0;</div>
+        <div class="cb-text"><strong>$2.6M</strong> average wasted per failed AI project <span class="cb-src">— McKinsey</span></div>
+      </div>
+      <div class="callout-box">
+        <div class="cb-icon">&#x1F4C9;</div>
+        <div class="cb-text">Only <strong>15%</strong> of AI prototypes reach production <span class="cb-src">— Gartner</span></div>
+      </div>
+    </div>
+
+    <!-- SECTION E: Footer (~50px) -->
+    <div class="foot">
+      <div class="auth"><div class="av">A</div><div><div class="nm">Aaryan Tiwari</div><div class="rl">Lead Gen AI Engineer · 5 Years</div></div></div>
+      <div class="ftag">Follow for more &#x2192;</div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+<div class="section-title">Carousel Slide</div>
+
+<!-- ===== SLIDE 2: MERGED ===== -->
+<div class="slide-wrapper">
+  <div class="slide-label"><span>Slide 2 — Pipeline Comparison</span><button class="btn-sm" onclick="downloadOne(this,'post2_slide2')">Download PNG</button></div>
+  <div class="s" data-name="post2_slide2">
+    <div class="grid-bg"></div>
+
+    <!-- SECTION A: Title + Stat Ring (~120px) -->
+    <div class="s2-header">
+      <div class="s2-header-left">
+        <div class="s2-title">Pipeline That <span class="red-acc">Breaks</span> vs<br>One That <span class="green-acc">Ships</span></div>
+        <div class="s2-subtitle">The gap between demo and production</div>
+      </div>
+      <div class="s2-ring">
+        <div class="s2-ring-inner">
+          <div class="s2-ring-num">85%</div>
+          <div class="s2-ring-label">Fail</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION B: Fragile Pipeline — RED (~140px) -->
+    <div class="s2-pipe-section">
+      <div class="s2-pipe-label red"><span class="lbl-dot"></span> Fragile Pipeline &#x2192; CRASH</div>
+      <div class="s2-pipe-flow red-track">
+        <div class="s2-node rn">
+          <div class="nd-icon">&#x1F4C1;</div>
+          <div class="nd-name">Local CSVs</div>
+          <div class="nd-desc">Static files</div>
+        </div>
+        <div class="s2-arr red">&#x2192;</div>
+        <div class="s2-node rn">
+          <div class="nd-icon">&#x1F4AC;</div>
+          <div class="nd-name">Raw Prompt</div>
+          <div class="nd-desc">No guardrails</div>
+        </div>
+        <div class="s2-arr red">&#x2192;</div>
+        <div class="s2-node rn">
+          <div class="nd-icon">&#x1F5A5;&#xFE0F;</div>
+          <div class="nd-name">Console Out</div>
+          <div class="nd-desc">No UI/API</div>
+        </div>
+        <div class="s2-arr red">&#x2192;</div>
+        <div class="s2-end red">&#x1F4A5; CRASH</div>
+      </div>
+    </div>
+
+    <!-- SECTION C: FDE Pipeline — GREEN (~160px) -->
+    <div class="s2-pipe-section">
+      <div class="s2-pipe-label green"><span class="lbl-dot"></span> FDE Pipeline &#x2192; DEPLOYED</div>
+      <div class="s2-pipe-flow green-track">
+        <div class="s2-node gn">
+          <div class="nd-icon">&#x1F4D0;</div>
+          <div class="nd-name">Discovery</div>
+          <div class="nd-desc">Data audit</div>
+        </div>
+        <div class="s2-arr green">&#x2192;</div>
+        <div class="s2-node gn">
+          <div class="nd-icon">&#x1F512;</div>
+          <div class="nd-name">RBAC</div>
+          <div class="nd-desc">Access ctrl</div>
+        </div>
+        <div class="s2-arr green">&#x2192;</div>
+        <div class="s2-node gn">
+          <div class="nd-icon">&#x1F4CA;</div>
+          <div class="nd-name">Pinecone</div>
+          <div class="nd-desc">Vector DB</div>
+        </div>
+        <div class="s2-arr green">&#x2192;</div>
+        <div class="s2-node gn">
+          <div class="nd-icon">&#x1F9E0;</div>
+          <div class="nd-name">LangGraph</div>
+          <div class="nd-desc">Orchestrate</div>
+        </div>
+        <div class="s2-arr green">&#x2192;</div>
+        <div class="s2-node gn">
+          <div class="nd-icon">&#x1F680;</div>
+          <div class="nd-name">AWS</div>
+          <div class="nd-desc">Deploy</div>
+        </div>
+        <div class="s2-arr green">&#x2192;</div>
+        <div class="s2-end green">&#x2705; LIVE</div>
+      </div>
+    </div>
+
+    <!-- SECTION D: Failure Timeline (~180px) -->
+    <div class="s2-timeline">
+      <div class="s2-timeline-title">The Typical Failure Timeline</div>
+      <div class="s2-tl-row">
+        <div class="s2-tl-card c1">
+          <div class="tw">Week 1</div>
+          <div class="te">Demo works perfectly</div>
+          <div class="te-detail">Stakeholders excited, budget approved</div>
+        </div>
+        <div class="s2-tl-card c2">
+          <div class="tw">Week 2</div>
+          <div class="te">Client data breaks it</div>
+          <div class="te-detail">Legacy formats, missing fields, dirty data</div>
+        </div>
+        <div class="s2-tl-card c3">
+          <div class="tw">Week 3</div>
+          <div class="te">Security audit fails</div>
+          <div class="te-detail">No RBAC, no encryption, no audit trail</div>
+        </div>
+        <div class="s2-tl-card c4">
+          <div class="tw">Week 4</div>
+          <div class="te">Project shelved</div>
+          <div class="te-detail">$2.6M burned, team reassigned</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION E: What the 15% Do (flex:1 absorbs remaining) -->
+    <div class="s2-diff">
+      <div class="s2-diff-title">What the 15% Do Differently</div>
+      <div class="s2-diff-grid">
+        <div class="s2-diff-card">
+          <div class="dci">&#x1F4D0;</div>
+          <div>
+            <div class="dcl">Discovery First</div>
+            <div class="dcd">Audit data, infra &amp; security before writing a single prompt</div>
+          </div>
+        </div>
+        <div class="s2-diff-card">
+          <div class="dci">&#x1F512;</div>
+          <div>
+            <div class="dcl">Security by Design</div>
+            <div class="dcd">RBAC, DENY rules &amp; audit trails baked in from day zero</div>
+          </div>
+        </div>
+        <div class="s2-diff-card">
+          <div class="dci">&#x1F9E0;</div>
+          <div>
+            <div class="dcl">Orchestration Layer</div>
+            <div class="dcd">LangGraph state machines with self-correcting loops</div>
+          </div>
+        </div>
+        <div class="s2-diff-card">
+          <div class="dci">&#x1F680;</div>
+          <div>
+            <div class="dcl">Deploy Strategy</div>
+            <div class="dcd">Docker + CI/CD + AWS planned from architecture phase</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION F: Hashtags (~70px) -->
+    <div class="s2-tags">
+      <span>#AI</span>
+      <span>#EnterpriseAI</span>
+      <span>#GenAI</span>
+      <span>#MLOps</span>
+      <span>#ForwardDeployedEngineer</span>
+      <span>#AIEngineer</span>
+      <span>#OpenToWork</span>
+      <span>#ProductionAI</span>
+      <span>#AIDeployment</span>
+      <span>#Hiring</span>
+    </div>
+  </div>
+</div>
+
+<script>
+async function captureElement(el,filename){const canvas=await html2canvas(el,{width:1080,height:1080,scale:2,backgroundColor:null,useCORS:true,logging:false,onclone:function(doc){doc.querySelectorAll('.slide-label,.toolbar,.btn-sm').forEach(e=>e.style.display='none')}});const link=document.createElement('a');link.download=filename+'.png';link.href=canvas.toDataURL('image/png');link.click()}
+async function downloadOne(btn,name){const el=btn.closest('.slide-wrapper').querySelector('[data-name]');btn.textContent='Exporting...';await captureElement(el,name);btn.textContent='Done!';setTimeout(()=>btn.textContent='Download PNG',2000)}
+async function downloadAll(){const s=document.getElementById('status');const els=document.querySelectorAll('[data-name]');for(let i=0;i<els.length;i++){s.textContent=`Exporting ${i+1} of ${els.length}...`;await captureElement(els[i],els[i].dataset.name);await new Promise(r=>setTimeout(r,500))}s.textContent=`Done! ${els.length} PNGs downloaded.`;setTimeout(()=>s.textContent='',4000)}
+</script>
+</body>
+</html>

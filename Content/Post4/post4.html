@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Post 4 — Architecture Blueprint</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Inter',sans-serif;background:#070b12;color:#e2e8f0;padding:40px;display:flex;flex-direction:column;align-items:center;gap:48px}
+  .toolbar{position:fixed;top:0;left:0;right:0;background:rgba(7,11,18,0.95);backdrop-filter:blur(12px);border-bottom:1px solid #1e293b;padding:14px 32px;display:flex;align-items:center;justify-content:space-between;z-index:100}
+  .toolbar h2{font-size:19px;font-weight:700;color:#f1f5f9}
+  .toolbar .actions{display:flex;gap:16px;align-items:center}
+  .btn-ghost{padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid rgba(56,189,248,0.2);background:rgba(56,189,248,0.1);color:#38bdf8;font-family:'Inter',sans-serif}
+  .status{font-size:12px;color:#64748b;min-width:200px;text-align:right}
+  .spacer{height:60px}
+  .slide-wrapper{display:flex;flex-direction:column;align-items:center;gap:12px}
+  .slide-label{display:flex;align-items:center;justify-content:space-between;width:1080px}
+  .slide-label span{font-size:13px;font-weight:600;color:#475569;text-transform:uppercase;letter-spacing:0.5px}
+  .btn-sm{padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid rgba(56,189,248,0.2);background:rgba(56,189,248,0.08);color:#38bdf8;font-family:'Inter',sans-serif}
+  .divider{width:1080px;height:1px;background:linear-gradient(90deg,transparent,#1e293b,transparent);margin:8px 0}
+  .section-title{font-size:13px;font-weight:700;color:#38bdf8;text-transform:uppercase;letter-spacing:1px;width:1080px;text-align:center}
+
+  /* SLIDE BASE */
+  .s{width:1080px;height:1080px;border-radius:24px;padding:28px 30px;display:flex;flex-direction:column;position:relative;overflow:hidden;background:linear-gradient(145deg,#0d1224,#111a2e,#0a1628)}
+  .s::before{content:'';position:absolute;top:-200px;right:-200px;width:600px;height:600px;background:radial-gradient(circle,rgba(56,189,248,0.06) 0%,transparent 70%);pointer-events:none}
+  .s::after{content:'';position:absolute;bottom:-150px;left:-150px;width:500px;height:500px;background:radial-gradient(circle,rgba(16,185,129,0.04) 0%,transparent 70%);pointer-events:none}
+  .grid-bg{position:absolute;inset:0;background-image:radial-gradient(rgba(56,189,248,0.03) 1px,transparent 1px);background-size:28px 28px;pointer-events:none}
+
+  /* COMMON */
+  .badge{display:inline-flex;align-items:center;gap:10px;padding:8px 18px;border-radius:100px;font-size:15px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;width:fit-content;margin-bottom:4px}
+  .badge.blue{background:rgba(56,189,248,0.1);border:1px solid rgba(56,189,248,0.25);color:#38bdf8}
+  .badge .dot{width:8px;height:8px;border-radius:50%;background:currentColor;animation:pulse 2s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+
+  .foot{margin-top:auto;display:flex;align-items:center;justify-content:space-between;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06)}
+  .auth{display:flex;align-items:center;gap:12px}
+  .av{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#38bdf8,#10b981);display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800;color:#0a0e1a}
+  .auth .nm{font-size:15px;font-weight:700;color:#f1f5f9}
+  .auth .rl{font-size:13px;color:#64748b}
+  .ftag{background:rgba(56,189,248,0.1);border:1px solid rgba(56,189,248,0.2);color:#38bdf8;padding:5px 14px;border-radius:6px;font-size:13px;font-weight:600}
+
+  /* ============ HERO ============ */
+  .hero-title{font-size:38px;font-weight:900;line-height:1.08;letter-spacing:-1.5px;margin-bottom:2px;color:#f8fafc}
+  .hero-title .acc{color:#38bdf8;text-shadow:0 0 40px rgba(56,189,248,0.3)}
+  .hero-sub{font-size:16px;color:#94a3b8;margin-bottom:10px;line-height:1.3}
+
+  /* HERO MAIN LAYOUT — architecture left + lifecycle right */
+  .hero-main{display:flex;gap:14px;flex:1;min-height:0;margin-bottom:10px}
+  .arch-col{flex:1;display:flex;flex-direction:column;gap:0;min-width:0}
+
+  /* LAYER CARDS (Hero) — each ~150px tall */
+  .lc{border-radius:10px;padding:12px 16px;background:rgba(255,255,255,0.025);display:flex;flex-direction:column;gap:5px}
+  .lc.l1{border-left:5px solid #38bdf8}
+  .lc.l2{border-left:5px solid #a78bfa}
+  .lc.l3{border:2px dashed rgba(248,113,113,0.4);border-left:5px solid #f87171;position:relative}
+  .lc.l4{border-left:5px solid #34d399}
+  .lc-head{display:flex;align-items:center;gap:10px}
+  .lc-icon{font-size:22px;line-height:1}
+  .lc-name{font-size:18px;font-weight:800;letter-spacing:-0.3px}
+  .l1 .lc-name{color:#38bdf8}
+  .l2 .lc-name{color:#a78bfa}
+  .l3 .lc-name{color:#f87171}
+  .l4 .lc-name{color:#34d399}
+  .lc-desc{font-size:14px;color:#94a3b8;line-height:1.25}
+  .pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px}
+  .pill{padding:3px 8px;border-radius:4px;font-size:13px;font-weight:600;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);color:#94a3b8}
+  .pill.bl{background:rgba(56,189,248,0.08);border-color:rgba(56,189,248,0.2);color:#38bdf8}
+  .pill.pu{background:rgba(167,139,250,0.08);border-color:rgba(167,139,250,0.2);color:#a78bfa}
+  .pill.rd{background:rgba(248,113,113,0.08);border-color:rgba(248,113,113,0.2);color:#f87171}
+  .pill.gn{background:rgba(52,211,153,0.08);border-color:rgba(52,211,153,0.2);color:#34d399}
+
+  /* CSS VERTICAL ARROWS (Hero) — 35px tall with triangle heads */
+  .va{display:flex;align-items:center;justify-content:center;height:32px;position:relative;flex-shrink:0}
+  .va-line{position:absolute;left:50%;top:0;bottom:8px;width:3px;transform:translateX(-50%)}
+  .va.bl .va-line{background:linear-gradient(180deg,rgba(56,189,248,0.5),rgba(167,139,250,0.5))}
+  .va.pu .va-line{background:linear-gradient(180deg,rgba(167,139,250,0.5),rgba(248,113,113,0.5))}
+  .va.rd .va-line{background:linear-gradient(180deg,rgba(248,113,113,0.5),rgba(52,211,153,0.5))}
+  .va-head{position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent}
+  .va.bl .va-head{border-top:7px solid rgba(167,139,250,0.6)}
+  .va.pu .va-head{border-top:7px solid rgba(248,113,113,0.6)}
+  .va.rd .va-head{border-top:7px solid rgba(52,211,153,0.6)}
+  .va-label{position:absolute;right:-4px;top:50%;transform:translateY(-50%);font-size:11px;font-weight:600;color:#475569;white-space:nowrap;padding-left:20px}
+
+  /* CIRCULAR FLOW inside L2 */
+  .cf{display:flex;align-items:center;gap:5px;margin-top:2px}
+  .cf-node{padding:2px 7px;border-radius:4px;font-size:13px;font-weight:700;color:#a78bfa;background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.2)}
+  .cf-arr{color:#475569;font-size:13px}
+
+  /* SECURITY BOUNDARY LABEL */
+  .sec-lbl{position:absolute;top:-9px;right:12px;background:#0d1224;padding:0 6px;font-size:11px;font-weight:700;color:#f87171;text-transform:uppercase;letter-spacing:0.8px}
+
+  /* DATA SOURCE SUB-BOXES (Hero) */
+  .dsrc-row{display:flex;gap:10px;margin-top:3px}
+  .dsrc{flex:1;background:rgba(255,255,255,0.03);border:1px solid rgba(52,211,153,0.15);border-radius:5px;padding:6px 8px;text-align:center}
+  .dsrc-nm{font-size:14px;font-weight:800;color:#34d399}
+  .dsrc-desc{font-size:13px;color:#64748b}
+
+  /* REQUEST LIFECYCLE PANEL (Hero right sidebar) */
+  .lp{width:220px;flex-shrink:0;background:rgba(255,255,255,0.02);border:1px solid #1e293b;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:0}
+  .lp-title{font-size:14px;font-weight:800;color:#38bdf8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;text-align:center}
+  .lp-step{display:flex;align-items:flex-start;gap:10px;padding:5px 0}
+  .lp-num{width:22px;height:22px;border-radius:50%;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.3);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#38bdf8;flex-shrink:0}
+  .lp-text{font-size:13px;color:#94a3b8;line-height:1.3;padding-top:2px}
+  .lp-conn{width:1px;height:5px;background:rgba(56,189,248,0.15);margin-left:11px}
+
+  /* METRICS ROW (Hero) */
+  .met-row{display:flex;gap:14px;margin-bottom:8px}
+  .met-card{flex:1;background:rgba(255,255,255,0.03);border:1px solid #1e293b;border-radius:8px;padding:8px 10px;text-align:center}
+  .met-val{font-size:24px;font-weight:900;letter-spacing:-0.5px}
+  .met-val.bl{color:#38bdf8}
+  .met-val.gn{color:#34d399}
+  .met-val.pu{color:#a78bfa}
+  .met-lbl{font-size:13px;color:#64748b;font-weight:600}
+
+  /* TOOL ECOSYSTEM ROW (Hero) */
+  .tool-row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:8px}
+  .tb{display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:5px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);font-size:13px;font-weight:600;color:#94a3b8}
+  .tb .tbi{font-size:15px}
+
+  /* ============ SLIDE 2 ============ */
+
+  /* Title */
+  .s2-title{font-size:34px;font-weight:900;letter-spacing:-1px;color:#f8fafc;margin-bottom:16px;line-height:1.1}
+  .s2-title .acc{color:#38bdf8;text-shadow:0 0 40px rgba(56,189,248,0.3)}
+
+  /* Architecture Diagram (Slide 2) — larger version */
+  .s2-arch{display:flex;flex-direction:column;gap:0;flex:1;min-height:0;margin-bottom:14px}
+
+  .s2-layer{border-radius:10px;padding:14px 18px;background:rgba(255,255,255,0.025);display:flex;flex-direction:column;gap:5px;width:100%}
+  .s2-layer.s2l1{border-left:5px solid #38bdf8}
+  .s2-layer.s2l2{border-left:5px solid #a78bfa}
+  .s2-layer.s2l3{border:2px dashed rgba(248,113,113,0.4);border-left:5px solid #f87171;position:relative}
+  .s2-layer.s2l4{border-left:5px solid #34d399}
+  .s2-lhead{display:flex;align-items:center;gap:10px}
+  .s2-licon{font-size:22px;line-height:1}
+  .s2-lname{font-size:18px;font-weight:800;letter-spacing:-0.3px}
+  .s2l1 .s2-lname{color:#38bdf8}
+  .s2l2 .s2-lname{color:#a78bfa}
+  .s2l3 .s2-lname{color:#f87171}
+  .s2l4 .s2-lname{color:#34d399}
+  .s2-ldesc{font-size:14px;color:#94a3b8;line-height:1.25}
+  .s2-pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px}
+  .s2p{padding:3px 10px;border-radius:5px;font-size:14px;font-weight:700}
+  .s2p.bl{background:rgba(56,189,248,0.1);border:1px solid rgba(56,189,248,0.25);color:#38bdf8}
+  .s2p.pu{background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.25);color:#a78bfa}
+  .s2p.rd{background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.25);color:#f87171}
+  .s2p.gn{background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.25);color:#34d399}
+
+  /* Vertical arrows (Slide 2) */
+  .s2-va{display:flex;align-items:center;justify-content:center;height:28px;position:relative;flex-shrink:0}
+  .s2-va-line{position:absolute;left:50%;top:0;bottom:7px;width:3px;transform:translateX(-50%)}
+  .s2-va.bl .s2-va-line{background:linear-gradient(180deg,rgba(56,189,248,0.5),rgba(167,139,250,0.5))}
+  .s2-va.pu .s2-va-line{background:linear-gradient(180deg,rgba(167,139,250,0.5),rgba(248,113,113,0.5))}
+  .s2-va.rd .s2-va-line{background:linear-gradient(180deg,rgba(248,113,113,0.5),rgba(52,211,153,0.5))}
+  .s2-va-head{position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent}
+  .s2-va.bl .s2-va-head{border-top:6px solid rgba(167,139,250,0.6)}
+  .s2-va.pu .s2-va-head{border-top:6px solid rgba(248,113,113,0.6)}
+  .s2-va.rd .s2-va-head{border-top:6px solid rgba(52,211,153,0.6)}
+  .s2-va-label{position:absolute;right:0;top:50%;transform:translateY(-50%);font-size:11px;font-weight:600;color:#475569;white-space:nowrap;padding-left:16px}
+
+  /* Circular flow (Slide 2 L2) */
+  .s2-cf{display:flex;align-items:center;gap:6px;margin-top:2px}
+  .s2-cf-node{padding:3px 9px;border-radius:4px;font-size:13px;font-weight:700;color:#a78bfa;background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.2)}
+  .s2-cf-arr{color:#475569;font-size:13px}
+
+  /* Security boundary label (Slide 2) */
+  .s2-sec-lbl{position:absolute;top:-9px;right:14px;background:#0d1224;padding:0 7px;font-size:11px;font-weight:800;color:#f87171;text-transform:uppercase;letter-spacing:0.8px}
+
+  /* Data source sub-boxes (Slide 2 L4) */
+  .s2-dsrc-row{display:flex;gap:12px;margin-top:4px}
+  .s2-dsrc{flex:1;background:rgba(52,211,153,0.05);border:1px solid rgba(52,211,153,0.2);border-radius:6px;padding:8px 10px;text-align:center}
+  .s2-dsrc-nm{font-size:15px;font-weight:800;color:#34d399}
+  .s2-dsrc-desc{font-size:13px;color:#64748b}
+
+  /* Horizontal Request Lifecycle (Slide 2) */
+  .s2-hflow{display:flex;align-items:center;gap:0;justify-content:center;background:rgba(255,255,255,0.02);border:1px solid #1e293b;border-radius:10px;padding:12px 16px;margin-bottom:14px}
+  .s2-hf-node{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:70px}
+  .s2-hf-num{width:24px;height:24px;border-radius:50%;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.3);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#38bdf8}
+  .s2-hf-label{font-size:13px;font-weight:700;color:#f1f5f9;text-align:center;line-height:1.2}
+  .s2-hf-arrow{display:flex;align-items:center;width:28px;position:relative;flex-shrink:0}
+  .s2-hf-arrow .hfa-line{position:absolute;top:50%;left:2px;right:8px;height:2px;background:rgba(56,189,248,0.3);transform:translateY(-50%)}
+  .s2-hf-arrow .hfa-head{position:absolute;right:2px;top:50%;transform:translateY(-50%);width:0;height:0;border-top:4px solid transparent;border-bottom:4px solid transparent;border-left:6px solid rgba(56,189,248,0.5)}
+
+  /* Metrics + Tools row (Slide 2) */
+  .s2-met-tools{display:flex;gap:14px;margin-bottom:14px;align-items:stretch}
+  .s2-met-left{display:flex;gap:12px;flex:1}
+  .s2-met{flex:1;background:rgba(255,255,255,0.03);border:1px solid #1e293b;border-radius:8px;padding:8px 10px;text-align:center;display:flex;flex-direction:column;justify-content:center}
+  .s2-met-val{font-size:22px;font-weight:900;letter-spacing:-0.5px}
+  .s2-met-val.bl{color:#38bdf8}
+  .s2-met-val.gn{color:#34d399}
+  .s2-met-val.pu{color:#a78bfa}
+  .s2-met-lbl{font-size:13px;color:#64748b;font-weight:600}
+  .s2-tools-right{display:flex;gap:8px;flex-wrap:wrap;align-content:center;flex:1.5;justify-content:flex-end}
+  .s2-tb{display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:5px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);font-size:13px;font-weight:600;color:#94a3b8}
+  .s2-tb .tbi{font-size:15px}
+
+  /* CTA + Tags (Slide 2) */
+  .s2-cta-quote{font-size:18px;font-style:italic;color:#94a3b8;line-height:1.3;margin-bottom:12px}
+  .s2-cta-quote .acc{color:#38bdf8;text-shadow:0 0 30px rgba(56,189,248,0.3);font-style:normal;font-weight:800}
+  .s2-tags{display:flex;gap:10px;flex-wrap:wrap}
+  .s2-tags span{background:rgba(56,189,248,0.08);border:1px solid rgba(56,189,248,0.15);color:#38bdf8;padding:5px 14px;border-radius:6px;font-size:14px;font-weight:700}
+</style>
+</head>
+<body>
+<div class="spacer"></div>
+<div class="toolbar"><h2>Post 4 — Architecture Blueprint</h2><div class="actions"><button class="btn-ghost" onclick="downloadAll()">Download All PNGs</button><span class="status" id="status"></span></div></div>
+
+<!-- ===== SLIDE 1: HERO ===== -->
+<div class="slide-wrapper">
+  <div class="slide-label"><span>Hero Image</span><button class="btn-sm" onclick="downloadOne(this,'post4_hero')">Download PNG</button></div>
+  <div class="s" data-name="post4_hero">
+    <div class="grid-bg"></div>
+
+    <!-- SECTION A: BADGE + TITLE + SUBTITLE (~80px) -->
+    <div class="badge blue"><span class="dot"></span> System Design</div>
+    <div class="hero-title">What an Enterprise AI System <span class="acc">Actually Looks Like</span></div>
+    <div class="hero-sub">It's not one model. It's 4 layers of orchestration, security, and data integration.</div>
+
+    <!-- SECTION B: MAIN — Architecture (left) + Lifecycle (right) (~650px, flex:1) -->
+    <div class="hero-main">
+
+      <!-- LEFT: 4-Layer Architecture Stack -->
+      <div class="arch-col">
+
+        <!-- LAYER 1: Presentation & Audit -->
+        <div class="lc l1">
+          <div class="lc-head">
+            <div class="lc-icon">&#x1F5A5;&#xFE0F;</div>
+            <div class="lc-name">Presentation &amp; Audit</div>
+          </div>
+          <div class="lc-desc">Users ask questions in plain English. Every query logged.</div>
+          <div class="pills">
+            <span class="pill bl">Streamlit</span>
+            <span class="pill bl">Port 8501</span>
+            <span class="pill bl">Audit Log</span>
+          </div>
+        </div>
+
+        <!-- ARROW 1: CSS vertical arrow -->
+        <div class="va bl">
+          <div class="va-line"></div>
+          <div class="va-head"></div>
+          <div class="va-label">User Query</div>
+        </div>
+
+        <!-- LAYER 2: AI Orchestrator -->
+        <div class="lc l2">
+          <div class="lc-head">
+            <div class="lc-icon">&#x1F9E0;</div>
+            <div class="lc-name">AI Orchestrator</div>
+          </div>
+          <div class="lc-desc">LangGraph React loop with self-correction and memory</div>
+          <div class="pills">
+            <span class="pill pu">LangGraph</span>
+            <span class="pill pu">React Loop</span>
+            <span class="pill pu">MemorySaver</span>
+          </div>
+          <div class="cf">
+            <span class="cf-node">Reason</span>
+            <span class="cf-arr">&#8594;</span>
+            <span class="cf-node">Act</span>
+            <span class="cf-arr">&#8594;</span>
+            <span class="cf-node">Validate</span>
+            <span class="cf-arr">&#8594;</span>
+            <span class="cf-node">Retry</span>
+            <span class="cf-arr">&#8634;</span>
+          </div>
+        </div>
+
+        <!-- ARROW 2: CSS vertical arrow -->
+        <div class="va pu">
+          <div class="va-line"></div>
+          <div class="va-head"></div>
+          <div class="va-label">Tool Calls</div>
+        </div>
+
+        <!-- LAYER 3: Security & RBAC (dashed border) -->
+        <div class="lc l3">
+          <div class="sec-lbl">SECURITY BOUNDARY</div>
+          <div class="lc-head">
+            <div class="lc-icon">&#x1F512;</div>
+            <div class="lc-name">Security &amp; RBAC</div>
+          </div>
+          <div class="lc-desc">Every request through restricted read-only user. Zero mutations.</div>
+          <div class="pills">
+            <span class="pill rd">usr_fde_ro</span>
+            <span class="pill rd">DENY Rules</span>
+            <span class="pill rd">FDE_views</span>
+            <span class="pill rd">Zero Mutation</span>
+          </div>
+        </div>
+
+        <!-- ARROW 3: CSS vertical arrow -->
+        <div class="va rd">
+          <div class="va-line"></div>
+          <div class="va-head"></div>
+          <div class="va-label">Validated Queries</div>
+        </div>
+
+        <!-- LAYER 4: Hybrid Data Sources -->
+        <div class="lc l4">
+          <div class="lc-head">
+            <div class="lc-icon">&#x1F5C4;&#xFE0F;</div>
+            <div class="lc-name">Hybrid Data Sources</div>
+          </div>
+          <div class="dsrc-row">
+            <div class="dsrc">
+              <div class="dsrc-nm">MSSQL 2022</div>
+              <div class="dsrc-desc">Structured Data</div>
+            </div>
+            <div class="dsrc">
+              <div class="dsrc-nm">Pinecone</div>
+              <div class="dsrc-desc">SOPs &amp; Docs</div>
+            </div>
+            <div class="dsrc">
+              <div class="dsrc-nm">Open-Meteo</div>
+              <div class="dsrc-desc">Live Weather</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: Request Lifecycle Panel -->
+      <div class="lp">
+        <div class="lp-title">Request Lifecycle</div>
+        <div class="lp-step">
+          <div class="lp-num">1</div>
+          <div class="lp-text">User asks <span style="color:#38bdf8;font-weight:700">"Show Q3 revenue"</span></div>
+        </div>
+        <div class="lp-conn"></div>
+        <div class="lp-step">
+          <div class="lp-num">2</div>
+          <div class="lp-text">Streamlit captures query &amp; logs to SQLite</div>
+        </div>
+        <div class="lp-conn"></div>
+        <div class="lp-step">
+          <div class="lp-num">3</div>
+          <div class="lp-text">LangGraph routes to SQL tool via React loop</div>
+        </div>
+        <div class="lp-conn"></div>
+        <div class="lp-step">
+          <div class="lp-num">4</div>
+          <div class="lp-text">RBAC validates permissions on usr_fde_ro</div>
+        </div>
+        <div class="lp-conn"></div>
+        <div class="lp-step">
+          <div class="lp-num">5</div>
+          <div class="lp-text">MSSQL returns structured data result</div>
+        </div>
+        <div class="lp-conn"></div>
+        <div class="lp-step">
+          <div class="lp-num">6</div>
+          <div class="lp-text">Answer displayed in Streamlit UI</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION C: METRICS ROW (~50px) -->
+    <div class="met-row">
+      <div class="met-card">
+        <div class="met-val bl">2.3s</div>
+        <div class="met-lbl">Avg Response</div>
+      </div>
+      <div class="met-card">
+        <div class="met-val gn">99.7%</div>
+        <div class="met-lbl">Uptime</div>
+      </div>
+      <div class="met-card">
+        <div class="met-val pu">500+</div>
+        <div class="met-lbl">Queries/Day</div>
+      </div>
+    </div>
+
+    <!-- SECTION D: TOOL ECOSYSTEM PILLS (~40px) -->
+    <div class="tool-row">
+      <div class="tb"><span class="tbi">&#9881;</span> Streamlit</div>
+      <div class="tb"><span class="tbi">&#x1F9E0;</span> LangGraph</div>
+      <div class="tb"><span class="tbi">&#x1F5C4;&#xFE0F;</span> MSSQL</div>
+      <div class="tb"><span class="tbi">&#x1F333;</span> Pinecone</div>
+      <div class="tb"><span class="tbi">&#x1F4E6;</span> Docker</div>
+      <div class="tb"><span class="tbi">&#9729;</span> AWS</div>
+      <div class="tb"><span class="tbi">&#9889;</span> GitHub Actions</div>
+    </div>
+
+    <!-- SECTION E: FOOTER (~50px) -->
+    <div class="foot">
+      <div class="auth"><div class="av">A</div><div><div class="nm">Aaryan Tiwari</div><div class="rl">Lead Gen AI Engineer &middot; 5 Years</div></div></div>
+      <div class="ftag">Follow for more &rarr;</div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+<div class="section-title">Carousel Slides</div>
+
+<!-- ===== SLIDE 2: MERGED (Architecture Detail + Lifecycle + CTA) — NO FOOTER ===== -->
+<div class="slide-wrapper">
+  <div class="slide-label"><span>Slide 2 — Architecture Detail</span><button class="btn-sm" onclick="downloadOne(this,'post4_slide2')">Download PNG</button></div>
+  <div class="s" data-name="post4_slide2">
+    <div class="grid-bg"></div>
+
+    <!-- SECTION A: TITLE (~60px) -->
+    <div class="s2-title">The <span class="acc">4-Layer Architecture</span> — How Data Flows</div>
+
+    <!-- SECTION B: FULL ARCHITECTURE DIAGRAM (flex:1, ~600px) -->
+    <div class="s2-arch">
+
+      <!-- LAYER 1: Presentation & Audit -->
+      <div class="s2-layer s2l1">
+        <div class="s2-lhead">
+          <div class="s2-licon">&#x1F5A5;&#xFE0F;</div>
+          <div class="s2-lname">Presentation &amp; Audit</div>
+        </div>
+        <div class="s2-ldesc">Users interact through Streamlit. Every query timestamped and logged.</div>
+        <div class="s2-pills">
+          <span class="s2p bl">Streamlit UI</span>
+          <span class="s2p bl">Port 8501</span>
+          <span class="s2p bl">Audit Log</span>
+        </div>
+      </div>
+
+      <!-- ARROW: User Query -->
+      <div class="s2-va bl">
+        <div class="s2-va-line"></div>
+        <div class="s2-va-head"></div>
+        <div class="s2-va-label">User Query</div>
+      </div>
+
+      <!-- LAYER 2: AI Orchestrator -->
+      <div class="s2-layer s2l2">
+        <div class="s2-lhead">
+          <div class="s2-licon">&#x1F9E0;</div>
+          <div class="s2-lname">AI Orchestrator</div>
+        </div>
+        <div class="s2-ldesc">LangGraph state machine with React-pattern reasoning loop</div>
+        <div class="s2-pills">
+          <span class="s2p pu">LangGraph</span>
+          <span class="s2p pu">React Loop</span>
+          <span class="s2p pu">MemorySaver</span>
+        </div>
+        <div class="s2-cf">
+          <span class="s2-cf-node">Reason</span>
+          <span class="s2-cf-arr">&#8594;</span>
+          <span class="s2-cf-node">Act</span>
+          <span class="s2-cf-arr">&#8594;</span>
+          <span class="s2-cf-node">Validate</span>
+          <span class="s2-cf-arr">&#8594;</span>
+          <span class="s2-cf-node">Retry</span>
+          <span class="s2-cf-arr">&#8634;</span>
+        </div>
+      </div>
+
+      <!-- ARROW: Routed Tool Calls -->
+      <div class="s2-va pu">
+        <div class="s2-va-line"></div>
+        <div class="s2-va-head"></div>
+        <div class="s2-va-label">Routed Tool Calls</div>
+      </div>
+
+      <!-- LAYER 3: Security & RBAC (dashed border) -->
+      <div class="s2-layer s2l3">
+        <div class="s2-sec-lbl">SECURITY BOUNDARY</div>
+        <div class="s2-lhead">
+          <div class="s2-licon">&#x1F512;</div>
+          <div class="s2-lname">Security &amp; RBAC</div>
+        </div>
+        <div class="s2-ldesc">Restricted read-only user with explicit DENY rules. No mutation possible.</div>
+        <div class="s2-pills">
+          <span class="s2p rd">usr_fde_ro</span>
+          <span class="s2p rd">DENY Rules</span>
+          <span class="s2p rd">FDE_views</span>
+          <span class="s2p rd">Zero Mutation</span>
+        </div>
+      </div>
+
+      <!-- ARROW: Validated Queries -->
+      <div class="s2-va rd">
+        <div class="s2-va-line"></div>
+        <div class="s2-va-head"></div>
+        <div class="s2-va-label">Validated Queries</div>
+      </div>
+
+      <!-- LAYER 4: Hybrid Data Sources -->
+      <div class="s2-layer s2l4">
+        <div class="s2-lhead">
+          <div class="s2-licon">&#x1F5C4;&#xFE0F;</div>
+          <div class="s2-lname">Hybrid Data Sources</div>
+        </div>
+        <div class="s2-dsrc-row">
+          <div class="s2-dsrc">
+            <div class="s2-dsrc-nm">MSSQL 2022</div>
+            <div class="s2-dsrc-desc">Structured Data</div>
+          </div>
+          <div class="s2-dsrc">
+            <div class="s2-dsrc-nm">Pinecone</div>
+            <div class="s2-dsrc-desc">SOPs &amp; Docs</div>
+          </div>
+          <div class="s2-dsrc">
+            <div class="s2-dsrc-nm">Open-Meteo API</div>
+            <div class="s2-dsrc-desc">Live Weather</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION C: HORIZONTAL REQUEST LIFECYCLE (~80px) -->
+    <div class="s2-hflow">
+      <div class="s2-hf-node">
+        <div class="s2-hf-num">1</div>
+        <div class="s2-hf-label">User<br>Query</div>
+      </div>
+      <div class="s2-hf-arrow"><div class="hfa-line"></div><div class="hfa-head"></div></div>
+      <div class="s2-hf-node">
+        <div class="s2-hf-num">2</div>
+        <div class="s2-hf-label">Streamlit<br>Log</div>
+      </div>
+      <div class="s2-hf-arrow"><div class="hfa-line"></div><div class="hfa-head"></div></div>
+      <div class="s2-hf-node">
+        <div class="s2-hf-num">3</div>
+        <div class="s2-hf-label">LangGraph<br>Route</div>
+      </div>
+      <div class="s2-hf-arrow"><div class="hfa-line"></div><div class="hfa-head"></div></div>
+      <div class="s2-hf-node">
+        <div class="s2-hf-num">4</div>
+        <div class="s2-hf-label">RBAC<br>Check</div>
+      </div>
+      <div class="s2-hf-arrow"><div class="hfa-line"></div><div class="hfa-head"></div></div>
+      <div class="s2-hf-node">
+        <div class="s2-hf-num">5</div>
+        <div class="s2-hf-label">Data<br>Source</div>
+      </div>
+      <div class="s2-hf-arrow"><div class="hfa-line"></div><div class="hfa-head"></div></div>
+      <div class="s2-hf-node">
+        <div class="s2-hf-num">6</div>
+        <div class="s2-hf-label">Response<br>Display</div>
+      </div>
+    </div>
+
+    <!-- SECTION D: METRICS + TOOLS ROW (~70px) -->
+    <div class="s2-met-tools">
+      <div class="s2-met-left">
+        <div class="s2-met">
+          <div class="s2-met-val bl">Avg 2.3s</div>
+          <div class="s2-met-lbl">Response</div>
+        </div>
+        <div class="s2-met">
+          <div class="s2-met-val gn">99.7%</div>
+          <div class="s2-met-lbl">Uptime</div>
+        </div>
+        <div class="s2-met">
+          <div class="s2-met-val pu">500+</div>
+          <div class="s2-met-lbl">Queries/Day</div>
+        </div>
+      </div>
+      <div class="s2-tools-right">
+        <div class="s2-tb"><span class="tbi">&#9881;</span> Streamlit</div>
+        <div class="s2-tb"><span class="tbi">&#x1F9E0;</span> LangGraph</div>
+        <div class="s2-tb"><span class="tbi">&#x1F5C4;&#xFE0F;</span> MSSQL</div>
+        <div class="s2-tb"><span class="tbi">&#x1F333;</span> Pinecone</div>
+        <div class="s2-tb"><span class="tbi">&#x1F4E6;</span> Docker</div>
+        <div class="s2-tb"><span class="tbi">&#9729;</span> AWS</div>
+        <div class="s2-tb"><span class="tbi">&#9889;</span> CI/CD</div>
+      </div>
+    </div>
+
+    <!-- SECTION E: CTA QUOTE + HASHTAGS (~80px) -->
+    <div class="s2-cta-quote">"Good AI architecture is <span class="acc">invisible.</span> Users just see answers — not the 4 layers keeping it secure, fast, and auditable."</div>
+    <div class="s2-tags">
+      <span>#AI</span>
+      <span>#SystemDesign</span>
+      <span>#LangGraph</span>
+      <span>#EnterpriseAI</span>
+      <span>#RBAC</span>
+      <span>#AIArchitecture</span>
+      <span>#ForwardDeployedEngineer</span>
+      <span>#OpenToWork</span>
+      <span>#Hiring</span>
+      <span>#ProductionAI</span>
+    </div>
+
+  </div>
+</div>
+
+<script>
+async function captureElement(el,filename){const canvas=await html2canvas(el,{width:1080,height:1080,scale:2,backgroundColor:null,useCORS:true,logging:false,onclone:function(doc){doc.querySelectorAll('.slide-label,.toolbar,.btn-sm').forEach(e=>e.style.display='none')}});const link=document.createElement('a');link.download=filename+'.png';link.href=canvas.toDataURL('image/png');link.click()}
+async function downloadOne(btn,name){const el=btn.closest('.slide-wrapper').querySelector('[data-name]');btn.textContent='Exporting...';await captureElement(el,name);btn.textContent='Done!';setTimeout(()=>btn.textContent='Download PNG',2000)}
+async function downloadAll(){const s=document.getElementById('status');const els=document.querySelectorAll('[data-name]');for(let i=0;i<els.length;i++){s.textContent=`Exporting ${i+1} of ${els.length}...`;await captureElement(els[i],els[i].dataset.name);await new Promise(r=>setTimeout(r,500))}s.textContent=`Done! ${els.length} PNGs downloaded.`;setTimeout(()=>s.textContent='',4000)}
+</script>
+</body>
+</html>
